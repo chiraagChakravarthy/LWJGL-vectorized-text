@@ -28,6 +28,7 @@ public class TextRender {
     private STBTTFontinfo fontinfo;
 
     private float[] atlas;//beziers coefficients
+    private int[] uLoops;//winding number, count, winding number, count...
     private int x0, y0, x1, y1;//bounds of glyph in glyph space
     private int count;//number of beziers in the glyph
 

@@ -56,16 +56,20 @@ public class FontTest {
                 int bx = vertex.cx(), by = vertex.cy();
                 STBTTVertex nextVertex = vertices.get(i-1);
                 int cx = nextVertex.x(), cy = nextVertex.y();
-                System.out.printf("(%dt^2+%dt+%d, %dt^2+%dt+%d)%n", ax-2*bx+cx, 2*bx-2*cx, cx, ay-2*by+cy, 2*by-2*cy, cy);
+                System.out.printf("(%ft^2+%dt+%d, %dt^2+%dt+%d)%n", climp(ax-2*bx+cx, 0.01f), 2*bx-2*cx, cx, ay-2*by+cy, 2*by-2*cy, cy);
                 quadratic.add(new int[]{ax-2*bx+cx, 2*bx-2*cx, cx, ay-2*by+cy, 2*by-2*cy, cy});
             } else if(type==2){
                 STBTTVertex nextVertex = vertices.get(i-1);
                 int bx = nextVertex.x(), by = nextVertex.y();
-                System.out.printf("(%dt+%d,%dt+%d)%n", ax-bx, bx, ay-by, by);
+                System.out.printf("(%ft^2+%dt+%d, %dt^2+%dt+%d)%n", 0.01f, ax-bx, bx, 0, ay-by, by);
                 linear.add(new int[]{ax-bx, bx, ay-by, by});
             }
 
         }
 
+    }
+
+    static float climp(float a, float min){
+        return Math.abs(a)<min?min:a;
     }
 }
