@@ -179,7 +179,7 @@ public class TextRender {
     }
 
     private void setupShaders() {
-        shader = new Shader("/shader/text.vert", "/shader/text2.frag");
+        shader = new Shader("/shader/text.vert", "/shader/text.frag");
     }
 
     private void render() {

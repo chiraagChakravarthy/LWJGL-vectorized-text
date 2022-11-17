@@ -11,36 +11,24 @@ uniform float uZoom;
 
 in vec2 pos;//position in glyph space
 
-struct intersect {
-    float t;
-    int side;
-};
 
-void findRoots(float a, float b, float c, intersect roots[10], int i){
-    roots[i] = intersect(2, 4);
-    roots[i+1] = intersect(2, 4);
-    //want to solve at^2+bt+c=0 for t
-
-    if (abs(a) < epsilon) {
-        if (abs(b) > epsilon) {
-            intersect t = roots[i];
-            t.t = -c/b;
-            t.side = int(i/2);
-        }
+//value: abs(x)-floor(abs(x))
+//side: int(abs(x))/2
+//out: x>0
+vec2 findRoots(float a, float b, float c){
+    vec2 roots = vec2(1);
+    if (abs(a) < epsilon && abs(b) > epsilon) {
+        roots = vec2(-c/b, 1);
         //otherwise no intercept
     } else {
         float dis = b * b - 4 * a * c;
         if (dis > 0) {
             float sqr = sqrt(dis);
-            intersect t = roots[i];
-            t.t = (-b + sqr) / (2.0 * a);
-            t.side = int(i/2);
-            t = roots[i+1];
-            t.t = (-b - sqr) / (2.0 * a);
-            t.side = int(i/2);
+            roots = (vec2(-b)+vec2(sqr, -sqr))/(2*a);
         }
         //otherwise no intercept
     }
+    return roots;
 }
 
 float integrate(float a, float b, float d, float e, float f, float y, float t0, float t1){
@@ -50,122 +38,102 @@ float integrate(float a, float b, float d, float e, float f, float y, float t0, 
 
     return upper-lower;
 }
+int sortNet[38] = int[](0, 2, 1, 3, 4, 6, 5, 7, 0, 4, 1, 5, 2, 6, 3, 7, 0, 1, 2, 3, 4, 5, 6, 7, 2, 4, 3, 5, 1, 4, 3, 6, 1, 2, 3, 4, 5, 6);
+
+int side(float t){
+    return int(abs(t))/2;
+}
+
+float val(float t){
+    return abs(t)-floor(abs(t));
+}
 
 //sorts by t
-void sort(intersect roots[10]){
-    //fucking hell why
-
-    for(int i = 1; i < 10; ++i)
-    {
-        intersect val = roots[i];
-        int j = i;
-        while(j > 0 && val.t < roots[j-1].t)
-        {
-            roots[j] = roots[j-1];
-            --j;
-        }
-        roots[j] = val;
+float[8] sort(float roots[8]){
+    for(int i = 0; i < 19; i++){
+        int a = sortNet[i*2];
+        int b = sortNet[i*2+1];
+        float ta = roots[a];
+        float tb = roots[b];//swap if tb<ta
+        bool ineq = val(tb)<val(ta);
+        roots[a] = mix(ta, tb, ineq);
+        roots[b] = mix(tb, ta, ineq);
     }
+    return roots;
+}
+
+struct ret {
+    int[8] index;
+    float[8] t;
+};
+
+ret sort2(float roots[8]){
+    int index[8];
+    for (int i = 0; i < 8; i++) {
+       index[i] = i;
+    }
+
+    for (int i = 0; i < 8; i++) {
+        int minI = i;
+        float minVal = val(roots[minI]);
+        for(int j = i; j < 8; j++){
+            float val = val(roots[j]);
+            bool ineq = val<minVal;
+            minI = int(mix(minI, j, ineq));
+            minVal = mix(minVal, val, ineq);
+        }
+        float temp = roots[i];
+        roots[i] = roots[minI];
+        roots[minI] = temp;
+
+        int temp2 = index[i];
+        index[i] = index[minI];
+        index[minI] = temp2;
+    }
+    return ret(index, roots);
 }
 
 float calcArea(){
-    intersect roots[10];
-    for(int i = 0; i < 10; i++){
-        roots[i] = intersect(2, 0);
-    }
+    float roots[8];
     vec2 maxPos = pos+vec2(uZoom);
     float overlap = 0;
 
-
-    for(int i = 0; i < uCount; i++){
-        float a = uAtlas[6*i],
-                b = uAtlas[6*i+1],
-                c = uAtlas[6*i+2],
-                d = uAtlas[6*i+3],
-                e = uAtlas[6*i+4],
-                f = uAtlas[6*i+5];
+    for(int i = 0; i < uCount; i++) {
+        float a = uAtlas[6 * i],
+        b = uAtlas[6 * i + 1],
+        c = uAtlas[6 * i + 2],
+        d = uAtlas[6 * i + 3],
+        e = uAtlas[6 * i + 4],
+        f = uAtlas[6 * i + 5];
 
         vec2 A = vec2(a, d);
         vec2 B = vec2(b, e);
         vec2 C = vec2(c, f);
 
-        findRoots(a, b, c-pos.x, roots, 0);
-        findRoots(a, b, c-maxPos.x, roots, 2);
-        findRoots(d, e, f-pos.y, roots, 4);
-        findRoots(d, e, f-maxPos.y, roots, 6);
-        roots[8] = intersect(0, 4);
-        roots[9] = intersect(1, 4);
-        sort(roots);
-        for(int i = 0; i < 10; i++){
-            intersect s = roots[i];
-            float t = s.t;
-            int side = s.side;
-            if(0<t||t>=1){
-                continue;
-            }
-            vec2 ixy = A*t*t+B*t+C;
-            vec2 dxy = 2*A*t*t+B;
+        vec2 roots1 = findRoots(a, b, c - pos.x);//left
+        vec2 roots2 = findRoots(a, b, c - maxPos.x);//right
+        vec2 roots3 = findRoots(d, e, f - pos.y);//bottom
+        vec2 roots4 = findRoots(d, e, f - maxPos.y);//top
 
-            bool doClamp = false;
-            bool bounds = true;
-            if(side==2||side==3) {
-                if (side == 2 && dxy.y < 0) {
-                    bounds = false;
-                }
+        roots[0] = roots1.x;
+        roots[1] = roots1.y;
+        roots[2] = roots2.x;
+        roots[3] = roots2.y;
+        roots[4] = roots3.x;
+        roots[5] = roots3.y;
+        roots[6] = roots4.x;
+        roots[7] = roots4.y;
 
-                if((ixy.x<pos.x+epsilon&&dxy.x<0)||ixy.x<pos.x-epsilon||(ixy.x>maxPos.x-epsilon&&dxy.x>0)||ixy.x>maxPos.x+epsilon){
-                    bounds = false;
-                }
+        ret sorted = sort2(roots);
 
-                if (side == 3 && dxy.y > 0) {
-                    doClamp = true;
-                }
-            }
+        roots = sorted.t;
+        int index[8] = sorted.index;
 
-            if(side==0||side==1){
-                if(side==0&&dxy.x<0){
-                    bounds = false;
-                }
-
-                if(side==1&&dxy.x>0){
-                    bounds = false;
-                }
-
-                if((ixy.y < pos.y+epsilon&&dxy.y<0)||ixy.y<pos.y-epsilon){
-                    bounds = false;
-                }
-                if((ixy.y>maxPos.y-epsilon&&dxy.y>0)||ixy.y > maxPos.y+epsilon){
-                    doClamp = true;
-                }
-            }
-            if(side==4){
-                if((ixy.x<pos.x+epsilon&&dxy.x<0)||ixy.x<pos.x-epsilon||(ixy.x>maxPos.x-epsilon&&dxy.x>0)||ixy.x>maxPos.x+epsilon){
-                    bounds = false;
-                }
-                if((ixy.y < pos.y+epsilon&&dxy.y<0)||ixy.y<pos.y-epsilon){
-                    bounds = false;
-                }
-                if((ixy.y>maxPos.y-epsilon&&dxy.y>0)||ixy.y > maxPos.y+epsilon){
-                    doClamp = true;
-                }
-            }
-            if(bounds){
-                float t1 = roots[i+1].t;
-                float nextIx = a*t1*t1+b*t1+c;
-                if(doClamp){
-                    overlap += (nextIx-ixy.x)* uZoom;
-                } else {
-                    overlap += integrate(a, b, d, e, f, pos.y, t, t1);
-                }
-            }
-        }
+        int squareDepth = int(mix(0, 1, a==0&&d==0&&( b==0&&c>pos.x&&c<maxPos.x || e==0&&f>pos.y&&f<maxPos.y)));
+        int aboveDepth = int(mix(0, 1, d>0||d==0&&(e<0||e==0&&f>=maxPos.y)));
     }
     return overlap;
 }
-
-
-
-
 
 void main (){
     float area = calcArea();
