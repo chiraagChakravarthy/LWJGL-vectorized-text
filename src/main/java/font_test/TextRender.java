@@ -189,7 +189,7 @@ public class TextRender {
         Renderer renderer = new Renderer();
 
         Matrix4f proj = new Matrix4f();
-        proj.ortho(0, WIDTH, HEIGHT, 0, -1.0f, 1.0f);
+        proj.ortho(0, HEIGHT, 0, HEIGHT, -1.0f, 1.0f);
 
         Matrix4f view = new Matrix4f();
 

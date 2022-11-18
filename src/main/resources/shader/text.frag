@@ -11,7 +11,6 @@ uniform float uZoom;
 
 in vec2 pos;//position in glyph space
 
-
 //value: abs(x)-floor(abs(x))
 //side: int(abs(x))/2
 //out: x>0
@@ -31,14 +30,44 @@ vec2 findRoots(float a, float b, float c){
     return roots;
 }
 
-float integrate(float a, float b, float d, float e, float f, float y, float t0, float t1){
-    f -= y;
+int[8] sort(float t[8]){
+    int index[8];
+    for (int i = 0; i < 8; i++) {
+       index[i] = i;
+    }
+    for (int i = 0; i < 8; i++) {
+       int minI = i;
+        float minVal = t[minI];
+        for(int j = i+1; j < 8; j++){
+            float val = t[j];
+            bool ineq = val<minVal;
+            minVal = mix(minVal, val, ineq);
+            minI = int(mix(minI, j, ineq));
+        }
+        t[minI] = t[i];
+        int tempI = index[minI];
+        index[minI] = index[i];
+        index[i] = tempI;
+    }
+    return index;
+}
+
+ivec2 findIo(vec2 roots, float a, float b, int n){
+    return ivec2(mix(ivec2(1), ivec2(-1), greaterThan((2*a*roots+vec2(b))*n, vec2(0))));
+}
+
+float integrate(float a, float b, float d, float e, float f, float t0, float t1){
+    t0 = clamp(t0, 0.0, 1.0);
+    t1 = clamp(t1, 0.0, 1.0);
+
+    //vec2 t = vec2(t0, t1);
+    //vec2 integral = (t*(b*(6*vec2(f)+t*(3*vec2(e)+2*d*t))+a*t*(6*vec2(f)+t*(4*vec2(e)+3*d*t))));
+
     float upper = (t1*(b*(6*f+t1*(3*e+2*d*t1))+a*t1*(6*f+t1*(4*e+3*d*t1))))/6;
     float lower = (t0*(b*(6*f+t0*(3*e+2*d*t0))+a*t0*(6*f+t0*(4*e+3*d*t0))))/6;
 
     return upper-lower;
 }
-int sortNet[38] = int[](0, 2, 1, 3, 4, 6, 5, 7, 0, 4, 1, 5, 2, 6, 3, 7, 0, 1, 2, 3, 4, 5, 6, 7, 2, 4, 3, 5, 1, 4, 3, 6, 1, 2, 3, 4, 5, 6);
 
 int side(float t){
     return int(abs(t))/2;
@@ -48,49 +77,10 @@ float val(float t){
     return abs(t)-floor(abs(t));
 }
 
-//sorts by t
-float[8] sort(float roots[8]){
-    for(int i = 0; i < 19; i++){
-        int a = sortNet[i*2];
-        int b = sortNet[i*2+1];
-        float ta = roots[a];
-        float tb = roots[b];//swap if tb<ta
-        bool ineq = val(tb)<val(ta);
-        roots[a] = mix(ta, tb, ineq);
-        roots[b] = mix(tb, ta, ineq);
-    }
-    return roots;
-}
-
-struct ret {
-    int[8] index;
-    float[8] t;
-};
-
-ret sort2(float roots[8]){
-    int index[8];
-    for (int i = 0; i < 8; i++) {
-       index[i] = i;
-    }
-
-    for (int i = 0; i < 8; i++) {
-        int minI = i;
-        float minVal = val(roots[minI]);
-        for(int j = i; j < 8; j++){
-            float val = val(roots[j]);
-            bool ineq = val<minVal;
-            minI = int(mix(minI, j, ineq));
-            minVal = mix(minVal, val, ineq);
-        }
-        float temp = roots[i];
-        roots[i] = roots[minI];
-        roots[minI] = temp;
-
-        int temp2 = index[i];
-        index[i] = index[minI];
-        index[minI] = temp2;
-    }
-    return ret(index, roots);
+float rectIntegrate(float a, float b, float t0, float t1){
+    t0 = clamp(t0, 0.0, 1.0);
+    t1 = clamp(t1, 0.0, 1.0);
+    return (a*t1*t1+b*t1-a*t0*t0-b*t0)*uZoom;
 }
 
 float calcArea(){
@@ -106,10 +96,6 @@ float calcArea(){
         e = uAtlas[6 * i + 4],
         f = uAtlas[6 * i + 5];
 
-        vec2 A = vec2(a, d);
-        vec2 B = vec2(b, e);
-        vec2 C = vec2(c, f);
-
         vec2 roots1 = findRoots(a, b, c - pos.x);//left
         vec2 roots2 = findRoots(a, b, c - maxPos.x);//right
         vec2 roots3 = findRoots(d, e, f - pos.y);//bottom
@@ -124,13 +110,51 @@ float calcArea(){
         roots[6] = roots4.x;
         roots[7] = roots4.y;
 
-        ret sorted = sort2(roots);
+        ivec2 io1 = findIo(roots1, a, b, -1);
+        ivec2 io2 = findIo(roots2, a, b, 1);
+        ivec2 io3 = findIo(roots3, d, e, -1);
+        ivec2 io4 = findIo(roots4, d, e, 1);
+        int io[8];
+        io[0] = io1.x;
+        io[1] = io1.y;
+        io[2] = io2.x;
+        io[3] = io2.y;
+        io[4] = io3.x;
+        io[5] = io3.y;
+        io[6] = io4.x;
+        io[7] = io4.y;
 
-        roots = sorted.t;
-        int index[8] = sorted.index;
+        int index[8] = sort(roots);
 
         int squareDepth = int(mix(0, 1, a==0&&d==0&&( b==0&&c>pos.x&&c<maxPos.x || e==0&&f>pos.y&&f<maxPos.y)));
         int aboveDepth = int(mix(0, 1, d>0||d==0&&(e<0||e==0&&f>=maxPos.y)));
+
+        for (int j = 0; j < 7; j++) {
+            int i0 = index[j];
+            int i1 = index[j+1];
+            float t0 = roots[i0];
+            float t1 = roots[i1];
+
+            float dx = rectIntegrate(a, b, t0, t1);
+
+            int s0 = i0/2;
+            int io0 = io[i0];
+
+            aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+
+            overlap += mix(0.0, dx, aboveDepth==2);
+        }
+
+        float intComp = 0;
+        for(int j = 0; j < 3; j++){
+            int i0 = index[j*2+1];
+            int i1 = index[j*2+2];
+            float t0 = roots[i0];
+            float t1 = roots[i1];
+            int io0 = io[i0];
+            intComp += mix(0.0, integrate(a, b, d, e, f-pos.y, t0, t1), io0==1);
+        }
+        overlap += mix(integrate(a, b, d, e, f-pos.y, roots[index[0]], roots[index[1]]), intComp, squareDepth==0);
     }
     return overlap;
 }
