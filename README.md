@@ -1,1 +1,1 @@
-# LWJGL-basics
+# LWJGL-vectorized-text
