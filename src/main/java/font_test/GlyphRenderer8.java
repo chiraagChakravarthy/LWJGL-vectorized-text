@@ -20,7 +20,7 @@ public class GlyphRenderer8 {
     ArrayList<float[]>[] glyphs;
 
     STBTTFontinfo fontinfo;
-    public int glyph=68;
+    public int glyph=60;
 
     public GlyphRenderer8(Main main) {
         this.main = main;
@@ -89,7 +89,7 @@ public class GlyphRenderer8 {
         return a;
     }
 
-    float zoom = 5;
+    float zoom = 160;
 
     int scale = 1;//number of screen pixels per buffer pixel
 
@@ -100,14 +100,14 @@ public class GlyphRenderer8 {
         height -= height%scale;
 
         BufferedImage image = new BufferedImage(width/scale, height/scale, BufferedImage.TYPE_INT_ARGB);
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
+        for (int x = 0; x < 100; x++) {
+            for (int y = 0; y < 100; y++) {
 
                 //float qx = (float) ((x-.1f*width/scale+Math.cos(ticks*.01f)*25)*zoom);
                 //float qy = (float) ((y-.1f*height/scale+Math.sin(ticks*.01f)*25)*zoom);
 
-                float qx = (x-0.1f*width)*zoom;
-                float qy = (y-0.1f*height)*zoom;
+                float qx = (x-0.1f*width)*zoom-ticks*10;
+                float qy = (y-0.1f*height)*zoom-ticks*10;
 
                 float shade = clamp(area(qx, qy, glyph), 0, 0.99999f);
 

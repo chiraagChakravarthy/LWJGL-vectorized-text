@@ -18,7 +18,7 @@ import static org.lwjgl.stb.STBTruetype.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class TextRender {
-    private final int WIDTH = 1024;
+    private final int WIDTH = 768;
     private final int HEIGHT = 768;
 
     private long window;
@@ -29,12 +29,12 @@ public class TextRender {
 
     private float[] atlas;//beziers coefficients
     private int[] uLoops;//winding number, count, winding number, count...
-    private int x0, y0, x1, y1;//bounds of glyph in glyph space
+    private float x0, y0, x1, y1;//bounds of glyph in glyph space
     private int count;//number of beziers in the glyph
 
 
-    private float zoom = 4;//how many glyph space units per screen pixel
-    private float gx=100, gy=100;//pixel space coordinates of the origin of the glyph
+    private float zoom = 2;//how many glyph space units per screen pixel
+    private float gx=100f, gy=100f;//pixel space coordinates of the origin of the glyph
 
     public void run() {
         makeWindow();
@@ -55,12 +55,12 @@ public class TextRender {
             throw new RuntimeException("Failed to initialize GLFW");
         }
         System.setProperty("java.awt.headless", "true");
-        glfwWindowHint(GLFW_SAMPLES, 4);
+        glfwWindowHint(GLFW_SAMPLES, 1);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        window = glfwCreateWindow(600, 900, "OpenGL window", NULL, NULL);
+        window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL window", NULL, NULL);
         if (window == NULL) {
             glfwTerminate();
             throw new RuntimeException("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
@@ -88,7 +88,7 @@ public class TextRender {
 
         STBTTVertex.Buffer vertices = stbtt_GetGlyphShape(fontinfo, glyph);
         if(vertices!=null){
-            float[] atlas = this.atlas = new float[300];
+            float[] atlas = this.atlas = new float[400];
             count = vertices.remaining();
             int j = 0;
 
@@ -144,16 +144,16 @@ public class TextRender {
          */
 
 
-        float gx0 = gx+this.x0/zoom,
-                gy0 = gy+this.y0/zoom,
-                gx1 = gx+this.x1/zoom,
-                gy1 = gy+this.y1/zoom;
+        float gx0 = Math.round(gx+this.x0/zoom),
+                gy0 = Math.round(gy+this.y0/zoom),
+                gx1 = Math.round(gx+this.x1/zoom),
+                gy1 = Math.round(gy+this.y1/zoom);
 
         float[] vertices = new float[]{
                 gx0, gy0, x0, y0,//bottom left
-                gx1, gy0, x1, y0,//top left
+                gx1, gy0, x1, y0,//bottom right
                 gx1, gy1, x1, y1,//top right
-                gx0, gy1, x0, y1,//bottom right
+                gx0, gy1, x0, y1,//top left
         };
 
         int[] indexes = new int[]{
@@ -179,7 +179,7 @@ public class TextRender {
     }
 
     private void setupShaders() {
-        shader = new Shader("/shader/text.vert", "/shader/text.frag");
+        shader = new Shader("/shader/text.vert", "/shader/text3.frag");
     }
 
     private void render() {
@@ -189,13 +189,14 @@ public class TextRender {
         Renderer renderer = new Renderer();
 
         Matrix4f proj = new Matrix4f();
-        proj.ortho(0, HEIGHT, 0, HEIGHT, -1.0f, 1.0f);
+        proj.ortho(0, WIDTH, 0, HEIGHT, -1.0f, 1.0f);
 
         Matrix4f view = new Matrix4f();
 
         Matrix4f model = new Matrix4f();
 
         Matrix4f mvp = proj.mul(view).mul(model);
+        System.out.println(mvp.toString());
 
         shader.setUniformMat4f("u_MVP", mvp);
         shader.setUniformFloatArray("uAtlas", atlas);

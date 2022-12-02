@@ -12,7 +12,7 @@ uniform float uZoom;
 
 in vec2 pos;//position in glyph space
 
-vec2 findRoots(float a, float b, float c){
+vec2 findRoots(float a, float b, float c, int n){
     vec2 roots = vec2(1);
     if (abs(a) < epsilon && abs(b) > epsilon) {
         roots = vec2(-c/b, 1);
@@ -25,34 +25,18 @@ vec2 findRoots(float a, float b, float c){
         }
         //otherwise no intercept
     }
+
+    ivec2 depth = ivec2(mix(ivec2(1), ivec2(0), greaterThan((2*a*roots+vec2(b))*n, vec2(0)))); //0: exit, 1: enter
+
+    ivec2 bits = floatBitsToInt(roots);
+    bits = (bits & vec2(-2)) | depth;
+    roots = intBitsToFloat(bits);
+
     return roots;
 }
 
-int[8] sort(float t[8]){
-    int index[8];
-    for (int i = 0; i < 8; i++) {
-       index[i] = i;
-    }
-    for (int i = 0; i < 7; i++) {
-        float minI = i;
-        float minVal = t[i];
-        for(int j = i+1; j < 8; j++){
-            float val = t[j];
-            bool ineq = val<minVal;
-            minVal = mix(minVal, val, ineq);
-            minI = mix(minI, j, ineq);
-        }
-        int intMini = int(minI);
-        t[intMini] = t[i];
-        int tempI = index[intMini];
-        index[intMini] = index[i];
-        index[i] = tempI;
-    }
-    return index;
-}
-
-ivec2 findIo(vec2 roots, float a, float b, int n){
-    return ivec2(mix(ivec2(1), ivec2(-1), greaterThan((2*a*roots+vec2(b))*n, vec2(0))));
+int findIo(float t){
+    return (floatBitsToInt(t)&1)*2-1;
 }
 
 float integrate(float a, float b, float d, float e, float f, float t0, float t1){
@@ -74,12 +58,7 @@ float rectIntegrate(float a, float b, float t0, float t1){
     return (a*t1*t1+b*t1-a*t0*t0-b*t0)*uZoom*scale;
 }
 
-int getBit(float t){
-    return floatBitsToInt(t)&3;
-}
-
 float calcArea(){
-    float roots[8];
     vec2 maxPos = pos + vec2(uZoom)*(0.5+scale/2);
     vec2 minPos = pos + vec2(uZoom)*(0.5-scale/2);
     float overlap = 0;
@@ -92,35 +71,97 @@ float calcArea(){
         e = uAtlas[6 * i + 4],
         f = uAtlas[6 * i + 5];
 
-        vec2 roots1 = findRoots(a, b, c - minPos.x);//left
-        vec2 roots2 = findRoots(a, b, c - maxPos.x);//right
-        vec2 roots3 = findRoots(d, e, f - minPos.y);//bottom
-        vec2 roots4 = findRoots(d, e, f - maxPos.y);//top
+        vec2 roots1 = findRoots(a, b, c - minPos.x, -1);//left
+        vec2 roots2 = findRoots(a, b, c - maxPos.x, 1);//right
+        vec2 roots3 = findRoots(d, e, f - minPos.y, -1);//bottom
+        vec2 roots4 = findRoots(d, e, f - maxPos.y, 1);//top
 
-        roots[0] = roots1.x;
-        roots[1] = roots1.y;
-        roots[2] = roots2.x;
-        roots[3] = roots2.y;
-        roots[4] = roots3.x;
-        roots[5] = roots3.y;
-        roots[6] = roots4.x;
-        roots[7] = roots4.y;
+        float t0 = roots1.x, t1 = roots1.y,
+                t2 = roots2.x, t3 = roots2.y,
+                t4 = roots3.x, t5 = roots3.y,
+                t6 = roots4.x, t7 = roots4.y;
 
-        ivec2 io1 = findIo(roots1, a, b, -1);
-        ivec2 io2 = findIo(roots2, a, b, 1);
-        ivec2 io3 = findIo(roots3, d, e, -1);
-        ivec2 io4 = findIo(roots4, d, e, 1);
-        int io[8];
-        io[0] = io1.x;
-        io[1] = io1.y;
-        io[2] = io2.x;
-        io[3] = io2.y;
-        io[4] = io3.x;
-        io[5] = io3.y;
-        io[6] = io4.x;
-        io[7] = io4.y;
+        //sort
+        float temp;
+        bool ineq;
+        ineq = t2<t0;
+        temp = t0;
+        t0 = min(t0, t2);
+        t2 = max(temp, t2);
+        ineq = t3<t1;
+        temp = t1;
+        t1 = min(t1, t3);
+        t3 = max(temp, t3);
+        ineq = t6<t4;
+        temp = t4;
+        t4 = min(t4, t6);
+        t6 = max(temp, t6);
+        ineq = t7<t5;
+        temp = t5;
+        t5 = min(t5, t7);
+        t7 = max(temp, t7);
+        ineq = t4<t0;
+        temp = t0;
+        t0 = min(t0, t4);
+        t4 = max(temp, t4);
+        ineq = t5<t1;
+        temp = t1;
+        t1 = min(t1, t5);
+        t5 = max(temp, t5);
+        ineq = t6<t2;
+        temp = t2;
+        t2 = min(t2, t6);
+        t6 = max(temp, t6);
+        ineq = t7<t3;
+        temp = t3;
+        t3 = min(t3, t7);
+        t7 = max(temp, t7);
+        ineq = t1<t0;
+        temp = t0;
+        t0 = min(t0, t1);
+        t1 = max(temp, t1);
+        ineq = t3<t2;
+        temp = t2;
+        t2 = min(t2, t3);
+        t3 = max(temp, t3);
+        ineq = t5<t4;
+        temp = t4;
+        t4 = min(t4, t5);
+        t5 = max(temp, t5);
+        ineq = t7<t6;
+        temp = t6;
+        t6 = min(t6, t7);
+        t7 = max(temp, t7);
+        ineq = t4<t2;
+        temp = t2;
+        t2 = min(t2, t4);
+        t4 = max(temp, t4);
+        ineq = t5<t3;
+        temp = t3;
+        t3 = min(t3, t5);
+        t5 = max(temp, t5);
+        ineq = t4<t1;
+        temp = t1;
+        t1 = min(t1, t4);
+        t4 = max(temp, t4);
+        ineq = t6<t3;
+        temp = t3;
+        t3 = min(t3, t6);
+        t6 = max(temp, t6);
+        ineq = t2<t1;
+        temp = t1;
+        t1 = min(t1, t2);
+        t2 = max(temp, t2);
+        ineq = t4<t3;
+        temp = t3;
+        t3 = min(t3, t4);
+        t4 = max(temp, t4);
+        ineq = t6<t5;
+        temp = t5;
+        t5 = min(t5, t6);
+        t6 = max(temp, t6);
 
-        int index[8] = sort(roots);
+
 
         int squareDepth = int(mix(0, 1, a==0&&d==0&&( b==0&&c>minPos.x&&c<maxPos.x || e==0&&f>minPos.y&&f<maxPos.y)));
         int aboveDepth = int(mix(0, 1, d>0||d==0&&(e<0||e==0&&f>=maxPos.y)));
@@ -143,7 +184,7 @@ float calcArea(){
 
         float intComp = 0;
         for(int j = 0; j < 3; j++){
-            int i0 = index[j*2+1];//12,
+            int i0 = index[j*2+1];
             int i1 = index[j*2+2];
             float t0 = roots[i0];
             float t1 = roots[i1];
