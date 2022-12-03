@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import static font_test.FileUtil.initFont;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
 import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
@@ -26,22 +27,12 @@ public class GlyphRenderer2 {
         quadratic = new ArrayList[300];
 
         try {
-            initFont("/font/arial.ttf");
+            fontinfo = initFont("/font/arial.ttf");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         //4-200
         initGlyphs();
-    }
-
-    private void initFont(String font) throws IOException {
-        byte[] file = TextRender.readFile(font);
-
-        ByteBuffer buffer = BufferUtils.createByteBuffer(file.length);
-        buffer = buffer.put(file).flip();
-
-        fontinfo = STBTTFontinfo.create();
-        stbtt_InitFont(fontinfo, buffer);
     }
 
     private void initGlyphs(){

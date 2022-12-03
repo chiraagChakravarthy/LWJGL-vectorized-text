@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+import static font_test.FileUtil.initFont;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.stb.STBTruetype.*;
@@ -40,7 +41,7 @@ public class TextRender {
     public void run() {
         makeWindow();
         try {
-            initFont("/font/arial.ttf");
+            fontinfo = initFont("/font/arial.ttf");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -121,25 +122,6 @@ public class TextRender {
                 j += 6;
             }
         }
-    }
-
-    private void initFont(String font) throws IOException {
-
-        byte[] bytes = readFile(font);
-
-        ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
-        buffer = buffer.put(bytes).flip();
-
-        fontinfo = STBTTFontinfo.create();
-        stbtt_InitFont(fontinfo, buffer);
-    }
-
-    public static byte[] readFile(String font) throws IOException {
-        InputStream input = TextRender.class.getResourceAsStream(font);
-        byte[] bytes = new byte[(int) input.available()];
-        DataInputStream dataInputStream = new DataInputStream(input);
-        dataInputStream .readFully(bytes);
-        return bytes;
     }
 
     void vertex() {

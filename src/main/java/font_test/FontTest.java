@@ -1,30 +1,18 @@
 package font_test;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
-import org.lwjgl.stb.STBTruetype;
 
-import java.awt.*;
-import java.awt.geom.Point2D;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.stream.Stream;
 
-import static org.lwjgl.stb.STBTruetype.*;
+import static font_test.FileUtil.initFont;
+import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphBox;
+import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
 
 public class FontTest {
     public static void main(String[] args) throws IOException {
-        byte[] file = TextRender.readFile("/font/arial.ttf");
-
-        ByteBuffer buffer = BufferUtils.createByteBuffer(file.length);
-        buffer = buffer.put(file).flip();
-
-        STBTTFontinfo info = STBTTFontinfo.create();
-        stbtt_InitFont(info, buffer);
+        STBTTFontinfo info = initFont("/font/arial.ttf");
 
         int glyph = 68;
         STBTTVertex.Buffer vertices = stbtt_GetGlyphShape(info, glyph);
@@ -66,6 +54,8 @@ public class FontTest {
         }
 
     }
+
+
 
     static float climp(float a, float min){
         return Math.abs(a)<min?min:a;

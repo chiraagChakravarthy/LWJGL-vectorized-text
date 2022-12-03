@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
+import static font_test.FileUtil.readFile;
 import static org.lwjgl.opengl.GL20.*;
 
 
@@ -48,7 +49,7 @@ public class Shader {
     public static String readShader(String path) {
         String data;
         try {
-            data = new String(TextRender.readFile(path));
+            data = new String(readFile(path));
         } catch (IOException e) {
             System.out.println("Failed to read file: " + path);
             e.printStackTrace();
