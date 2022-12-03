@@ -1,20 +1,11 @@
 package gl;
 
-import font_test.TextRender;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.imageio.ImageIO;
-import java.io.*;
-import java.nio.CharBuffer;
+import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
 
 import static font_test.FileUtil.readFile;
 import static org.lwjgl.opengl.GL20.*;

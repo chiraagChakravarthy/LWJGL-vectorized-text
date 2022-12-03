@@ -43,7 +43,7 @@ ivec4 findIo(vec4 t, ivec4 side, float a, float b, float d, float e){
     bvec4 ineq = lessThan(side, ivec4(2));
     vec4 A = mix(vec4(d), vec4(a), ineq);
     vec4 B = mix(vec4(e), vec4(b), ineq);
-    return ivec4(mix(ivec4(1), ivec4(-1), greaterThan((2*A*t+B)*n, vec4(0))));
+    return ivec4(mix(vec4(1), vec4(-1), greaterThan((2*A*t+B)*n, vec4(0))));
 }
 
 float integrate(float a, float b, float d, float e, float f, float t0, float t1){
@@ -158,8 +158,8 @@ float calcArea(){
         ivec4 iob = findIo(vb, sb, a, b, d, e);
 
         //initial depth
-        int squareDepth = int(mix(0, 1, a==0&&d==0&&( b==0&&c>minPos.x&&c<maxPos.x || e==0&&f>minPos.y&&f<maxPos.y)));
-        int aboveDepth = int(mix(0, 1, d>0||d==0&&(e<0||e==0&&f>=maxPos.y)));
+        int squareDepth = int(mix(0.0, 1.0, a==0&&d==0&&( b==0&&c>minPos.x&&c<maxPos.x || e==0&&f>minPos.y&&f<maxPos.y)));
+        int aboveDepth = int(mix(0.0, 1.0, d>0||d==0&&(e<0||e==0&&f>=maxPos.y)));
 
         float intComp = 0;
 
@@ -174,7 +174,7 @@ float calcArea(){
         dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.x;
         s0 = sa.x;
-        aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+        aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
         overlap += mix(0.0, dx, aboveDepth==2);
 
         //t1-t2 above
@@ -183,7 +183,7 @@ float calcArea(){
         dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.y;
         s0 = sa.y;
-        aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+        aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
         overlap += mix(0.0, dx, aboveDepth==2);
         intComp += mix(0.0, integrate(a, b, d, e, f-minPos.y, t0, t1), io0==1); //t1-t2 below
 
@@ -193,7 +193,7 @@ float calcArea(){
         dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.z;
         s0 = sa.z;
-        aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+        aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
         overlap += mix(0.0, dx, aboveDepth==2);
 
         //t3-t4 above
@@ -202,7 +202,7 @@ float calcArea(){
         dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.w;
         s0 = sa.w;
-        aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+        aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
         overlap += mix(0.0, dx, aboveDepth==2);
         intComp += mix(0.0, integrate(a, b, d, e, f-minPos.y, t0, t1), io0==1); //t3-t4 below
 
@@ -212,7 +212,7 @@ float calcArea(){
         dx = rectIntegrate(a, b, t0, t1);
         io0 = iob.x;
         s0 = sb.x;
-        aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+        aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
         overlap += mix(0.0, dx, aboveDepth==2);
 
         //t5-t6 above
@@ -221,7 +221,7 @@ float calcArea(){
         dx = rectIntegrate(a, b, t0, t1);
         io0 = iob.y;
         s0 = sb.y;
-        aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+        aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
         overlap += mix(0.0, dx, aboveDepth==2);
         intComp += mix(0.0, integrate(a, b, d, e, f-minPos.y, t0, t1), io0==1); //t3-t4 below
 
@@ -231,7 +231,7 @@ float calcArea(){
         dx = rectIntegrate(a, b, t0, t1);
         io0 = iob.z;
         s0 = sb.z;
-        aboveDepth += int(mix(mix(io0, -io0, s0==3), 0, s0==2));
+        aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
         overlap += mix(0.0, dx, aboveDepth==2);
 
         overlap += mix(integrate(a, b, d, e, f-minPos.y, va.x, va.y), intComp, squareDepth==0);

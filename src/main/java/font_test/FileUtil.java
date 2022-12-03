@@ -26,7 +26,7 @@ public class FileUtil {
         InputStream input = TextRender.class.getResourceAsStream(font);
         byte[] bytes = new byte[(int) input.available()];
         DataInputStream dataInputStream = new DataInputStream(input);
-        dataInputStream .readFully(bytes);
+        dataInputStream.readFully(bytes);
         return bytes;
     }
 }

@@ -21,7 +21,7 @@ public class GlyphRenderer8 {
     ArrayList<float[]>[] glyphs;
 
     STBTTFontinfo fontinfo;
-    public int glyph=60;
+    public int glyph=68;
 
     public GlyphRenderer8(Main main) {
         this.main = main;

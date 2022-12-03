@@ -30,13 +30,12 @@ public class TextRender {
     private STBTTFontinfo fontinfo;
 
     private float[] atlas;//beziers coefficients
-    private int[] uLoops;//winding number, count, winding number, count...
     private float x0, y0, x1, y1;//bounds of glyph in glyph space
     private int count;//number of beziers in the glyph
 
 
-    private float pixelSize = 2;//how many glyph space units per screen pixel
-    private float gx=100.4f, gy=100.4f;//pixel space coordinates of the origin of the glyph
+    private float pixelSize = 160;//how many glyph space units per screen pixel
+    private float gx=101.2f, gy=101.5f;//pixel space coordinates of the origin of the glyph
 
     public void run() {
         makeWindow();
@@ -83,10 +82,10 @@ public class TextRender {
     void initGlyph(int glyph) {
         int[] x0 = new int[1], x1 = new int[1], y0 = new int[1], y1 = new int[1];
         stbtt_GetGlyphBox(fontinfo, glyph, x0, y0, x1, y1);
-        this.x0 = x0[0];
-        this.x1 = x1[0];
-        this.y0 = y0[0];
-        this.y1 = y1[0];
+        this.x0 = x0[0]-1;
+        this.x1 = x1[0]+1;
+        this.y0 = y0[0]-1;
+        this.y1 = y1[0]+1;
 
         STBTTVertex.Buffer vertices = stbtt_GetGlyphShape(fontinfo, glyph);
         if(vertices!=null){
@@ -134,16 +133,19 @@ public class TextRender {
          */
 
 
-        float gx0 = Math.round(gx+this.x0/ pixelSize),
-                gy0 = Math.round(gy+this.y0/ pixelSize),
-                gx1 = Math.round(gx+this.x1/ pixelSize),
-                gy1 = Math.round(gy+this.y1/ pixelSize);
+        float gx0 = gx+this.x0/ pixelSize,
+                gy0 = gy+this.y0/ pixelSize,
+                gx1 = gx+this.x1/ pixelSize,
+                gy1 = gy+this.y1/ pixelSize;
+
+        float dx0 = (gx0-(gx0 = (float) Math.floor(gx0)))*pixelSize, dx1 = ((gx1 = (float) Math.ceil(gx1)) - gx1)*pixelSize,
+                dy0 = (gy0 - (gy0 = (float) Math.floor(gy0)))*pixelSize, dy1 = ((gy1 = (float) Math.ceil(gy1))-gy1)*pixelSize;
 
         float[] vertices = new float[]{
-                gx0, gy0, x0, y0,//bottom left
-                gx1, gy0, x1, y0,//bottom right
-                gx1, gy1, x1, y1,//top right
-                gx0, gy1, x0, y1,//top left
+                gx0, gy0, x0-dx0, y0-dy0,//bottom left
+                gx1, gy0, x1+dx1, y0-dy0,//bottom right
+                gx1, gy1, x1+dx1, y1+dy1,//top right
+                gx0, gy1, x0-dx0, y1+dy1,//top left
         };
 
         int[] indexes = new int[]{
@@ -158,14 +160,6 @@ public class TextRender {
         layout.addFloat(2); //pixel coords
         layout.addFloat(2); //glyph coords
         va.addVertexBuffer(vb, layout);
-    }
-
-    float floor(float a){
-        return (float)Math.floor(a);
-    }
-
-    float ceil(float a){
-        return (float)Math.ceil(a);
     }
 
     private void setupShaders() {
