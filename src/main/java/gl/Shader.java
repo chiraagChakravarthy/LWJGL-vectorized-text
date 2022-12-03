@@ -1,5 +1,6 @@
 package gl;
 
+import font_test.TextRender;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryUtil;
@@ -47,7 +48,7 @@ public class Shader {
     public static String readShader(String path) {
         String data;
         try {
-            data = new String(Objects.requireNonNull(Shader.class.getResourceAsStream(path)).readAllBytes());
+            data = new String(TextRender.readFile(path));
         } catch (IOException e) {
             System.out.println("Failed to read file: " + path);
             e.printStackTrace();

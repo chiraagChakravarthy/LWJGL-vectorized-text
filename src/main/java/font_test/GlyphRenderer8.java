@@ -36,9 +36,7 @@ public class GlyphRenderer8 {
     }
 
     private void initFont(String font) throws IOException {
-        InputStream input = FontTest.class.getResourceAsStream(font);
-
-        byte[] file = input.readAllBytes();
+        byte[] file = TextRender.readFile(font);
 
         ByteBuffer buffer = BufferUtils.createByteBuffer(file.length);
         buffer = buffer.put(file).flip();

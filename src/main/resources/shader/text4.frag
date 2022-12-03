@@ -70,7 +70,7 @@ float calcArea(){
     //iterate through beziers
     for (int i = 0; i < uCount; i++) {
         float a = uAtlas[i*6], b = uAtlas[i*6+1], c = uAtlas[i*6+2],
-                d = uAtlas[i*6+3], e = uAtlas[i*6+4], f = uAtlas[i*6+5];
+        d = uAtlas[i*6+3], e = uAtlas[i*6+4], f = uAtlas[i*6+5];
 
         vec2 roots1 = findRoots(a, b, c - minPos.x, 0);//left
         vec2 roots2 = findRoots(a, b, c - maxPos.x, 1);//right
@@ -79,15 +79,13 @@ float calcArea(){
 
 
         //SORT
-        /*for retards
+    /*for retards
         [a b c d e f g h]
-
         LAYER 1
         if e>a: swap
         if f>b: swap
         if g>c: swap
         if h>d: swap
-
         layer 1: [[0,4], [1,5], [2,6], [3,7]]
         layer 2: [[0,2], [1,3], [4,6], [5,7]]
         layer 3: [[2,4], [3,5], [0,1], [6,7]]
@@ -105,9 +103,6 @@ float calcArea(){
 
         //min([0 4 5 2], [1 3 6 7]) = [0 3 5 2]
         //max([0 4 5 2], [1 3 6 7]) = [1 4 6 7]
-
-        //greaterThan([0 4 5 2], [1 3 6 7]) = [0>1, 4>3, 5>6, 2>7] = [false, true, true, false] = [0 1 1 0]
-        //mix(a, b, 0/1): selection function (0 selects a, 1 selects b)
 
         //LAYER 2
         va = vec4(ta.xy, tb.xy);//0145

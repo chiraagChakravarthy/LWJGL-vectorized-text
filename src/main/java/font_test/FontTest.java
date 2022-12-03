@@ -18,9 +18,7 @@ import static org.lwjgl.stb.STBTruetype.*;
 
 public class FontTest {
     public static void main(String[] args) throws IOException {
-        InputStream input = FontTest.class.getResourceAsStream("/font/arial.ttf");
-
-        byte[] file = input.readAllBytes();
+        byte[] file = TextRender.readFile("/font/arial.ttf");
 
         ByteBuffer buffer = BufferUtils.createByteBuffer(file.length);
         buffer = buffer.put(file).flip();

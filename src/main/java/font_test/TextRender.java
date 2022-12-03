@@ -8,6 +8,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -33,7 +34,7 @@ public class TextRender {
     private int count;//number of beziers in the glyph
 
 
-    private float pixelSize = 1;//how many glyph space units per screen pixel
+    private float pixelSize = 2;//how many glyph space units per screen pixel
     private float gx=100.4f, gy=100.4f;//pixel space coordinates of the origin of the glyph
 
     public void run() {
@@ -123,15 +124,22 @@ public class TextRender {
     }
 
     private void initFont(String font) throws IOException {
-        InputStream input = FontTest.class.getResourceAsStream(font);
 
-        byte[] file = input.readAllBytes();
+        byte[] bytes = readFile(font);
 
-        ByteBuffer buffer = BufferUtils.createByteBuffer(file.length);
-        buffer = buffer.put(file).flip();
+        ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
+        buffer = buffer.put(bytes).flip();
 
         fontinfo = STBTTFontinfo.create();
         stbtt_InitFont(fontinfo, buffer);
+    }
+
+    public static byte[] readFile(String font) throws IOException {
+        InputStream input = TextRender.class.getResourceAsStream(font);
+        byte[] bytes = new byte[(int) input.available()];
+        DataInputStream dataInputStream = new DataInputStream(input);
+        dataInputStream .readFully(bytes);
+        return bytes;
     }
 
     void vertex() {
