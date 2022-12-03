@@ -15,7 +15,7 @@ public class FileUtil {
         byte[] bytes = readFile(font);
 
         ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
-        buffer = buffer.put(bytes).flip();
+        buffer = (ByteBuffer) buffer.put(bytes).flip();
 
         STBTTFontinfo fontinfo = STBTTFontinfo.create();
         stbtt_InitFont(fontinfo, buffer);

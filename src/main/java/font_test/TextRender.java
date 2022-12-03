@@ -34,7 +34,7 @@ public class TextRender {
     private int count;//number of beziers in the glyph
 
 
-    private float pixelSize = 160;//how many glyph space units per screen pixel
+    private float pixelSize = 2;//how many glyph space units per screen pixel
     private float gx=101.2f, gy=101.5f;//pixel space coordinates of the origin of the glyph
 
     public void run() {
