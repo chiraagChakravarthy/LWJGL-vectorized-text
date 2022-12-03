@@ -3,10 +3,11 @@ layout (location=0) out vec4 color;
 
 #define epsilon 0.0001
 #define scale 1.0
+//scaling factor of intersect window for pixel
 
 uniform float[400] uAtlas;//at^2+bt+c
 uniform int uCount;//how many bezier curves form this glyph
-uniform float uZoom;
+uniform float uPixelSize;
 //size of pixel in glyph space
 //depending on program to provide this info
 
@@ -37,19 +38,17 @@ ivec4 findSide(vec4 t){
     return floatBitsToInt(t)&ivec4(3);
 }
 
-ivec4 findIo(vec4 t, ivec4 side, float a, float b, float c, float d){
+ivec4 findIo(vec4 t, ivec4 side, float a, float b, float d, float e){
     ivec4 n = (side&ivec4(1))*2-1;
-    vec4 A = mix(vec4(c), vec4(a), lessThan(side, ivec4(2)));
-    vec4 B = mix(vec4(d), vec4(b), lessThan(side, ivec4(2)));
+    bvec4 ineq = lessThan(side, ivec4(2));
+    vec4 A = mix(vec4(d), vec4(a), ineq);
+    vec4 B = mix(vec4(e), vec4(b), ineq);
     return ivec4(mix(ivec4(1), ivec4(-1), greaterThan((2*A*t+B)*n, vec4(0))));
 }
 
 float integrate(float a, float b, float d, float e, float f, float t0, float t1){
     t0 = clamp(t0, 0.0, 1.0);
     t1 = clamp(t1, 0.0, 1.0);
-
-    //vec2 t = vec2(t0, t1);
-    //vec2 integral = (t*(b*(6*vec2(f)+t*(3*vec2(e)+2*d*t))+a*t*(6*vec2(f)+t*(4*vec2(e)+3*d*t))));
 
     float upper = (t1*(b*(6*f+t1*(3*e+2*d*t1))+a*t1*(6*f+t1*(4*e+3*d*t1))))/6;
     float lower = (t0*(b*(6*f+t0*(3*e+2*d*t0))+a*t0*(6*f+t0*(4*e+3*d*t0))))/6;
@@ -60,12 +59,12 @@ float integrate(float a, float b, float d, float e, float f, float t0, float t1)
 float rectIntegrate(float a, float b, float t0, float t1){
     t0 = clamp(t0, 0.0, 1.0);
     t1 = clamp(t1, 0.0, 1.0);
-    return (a*t1*t1+b*t1-a*t0*t0-b*t0)*uZoom*scale;
+    return (a*t1*t1+b*t1-a*t0*t0-b*t0)* uPixelSize *scale;
 }
 
 float calcArea(){
-    vec2 maxPos = pos + vec2(uZoom)*(0.5+scale/2);
-    vec2 minPos = pos + vec2(uZoom)*(0.5-scale/2);
+    vec2 maxPos = pos + vec2(uPixelSize)*(0.5+scale/2);
+    vec2 minPos = pos + vec2(uPixelSize)*(0.5-scale/2);
     float overlap = 0;
 
     //iterate through beziers
@@ -96,11 +95,13 @@ float calcArea(){
         layer 5: [[1,4], [3,6]]
         layer 6: [[1,2], [3,4], [5,6]]
         */
+
         //LAYER 1
         vec4 va = vec4(roots1, roots2);//0123
         vec4 vb = vec4(roots3, roots4);//4567
-        vec4 ta = min(va, vb);
-        vec4 tb = max(va, vb);
+        bvec4 ineq = greaterThan(va, vb);
+        vec4 ta = mix(va, vb, ineq);
+        vec4 tb = mix(vb, va, ineq);
 
         //min([0 4 5 2], [1 3 6 7]) = [0 3 5 2]
         //max([0 4 5 2], [1 3 6 7]) = [1 4 6 7]
@@ -108,32 +109,37 @@ float calcArea(){
         //LAYER 2
         va = vec4(ta.xy, tb.xy);//0145
         vb = vec4(ta.zw, tb.zw);//2367
-        ta = min(va, vb);
-        tb = max(va, vb);
+        ineq = greaterThan(va, vb);
+        ta = mix(va, vb, ineq);
+        tb = mix(vb, va, ineq);
 
         //LAYER 3
         va = vec4(tb.xy, ta.x, tb.z);//2306
         vb = vec4(ta.zwy, tb.w);//4517
-        ta = min(va, vb);
-        tb = max(va, vb);
+        ineq = greaterThan(va, vb);
+        ta = mix(va, vb, ineq);
+        tb = mix(vb, va, ineq);
 
         //LAYER 4
         vec2 a2 = vec2(ta.x, tb.x);//24
         vec2 b2 = vec2(ta.y, tb.y);//35
-        vec2 ta2 = min(a2, b2);
-        vec2 tb2 = max(a2, b2);
+        bvec2 ineq2 = greaterThan(a2, b2);
+        vec2 ta2 = mix(a2, b2, ineq2);
+        vec2 tb2 = mix(b2, a2, ineq2);
 
         //LAYER 5
         vec2 a3 = vec2(tb.z, tb2.x);//13
         vec2 b3 = vec2(ta2.y, ta.w);//46
-        vec2 ta3 = min(a3, b3);
-        vec2 tb3 = max(a3, b3);
+        bvec2 ineq3 = greaterThan(a3, b3);
+        vec2 ta3 = mix(a3, b3, ineq3);
+        vec2 tb3 = mix(b3, a3, ineq3);
 
         //LAYER 6
         vec3 a4 = vec3(ta3.xy, tb2.y);//135
         vec3 b4 = vec3(ta2.x, tb3.xy);//246
-        vec3 ta4 = min(a4, b4);
-        vec3 tb4 = max(a4, b4);
+        bvec3 ineq4 = greaterThan(a4, b4);
+        vec3 ta4 = mix(a4, b4, ineq4);
+        vec3 tb4 = mix(b4, a4, ineq4);
 
         va = vec4(ta.z, ta4.x, tb4.x, ta4.y);//0123
         vb = vec4(tb4.y, ta4.z, tb4.z, tb.w);//4567
@@ -156,6 +162,8 @@ float calcArea(){
 
         float t0, t1, dx;
         int io0, s0;
+
+        //INTEGRATE
 
         //t0-t1 above
         t0 = va.x;
@@ -228,11 +236,15 @@ float calcArea(){
     return overlap;
 }
 
-void main (){
+void main () {
     float area = calcArea();
-    area = area/ uZoom / uZoom/scale/scale;
-    area = clamp(area, 0.0, 1.0);
-    float shade = 1-area;
-    shade = pow(shade, 1.0/2.2);
-    color = vec4(vec3(shade),1);
+    if (area == -1) {
+        color = vec4(1, 0, 0, 1);
+    } else {
+        area = area / uPixelSize / uPixelSize / scale / scale;
+        area = clamp(area, 0.0, 1.0);
+        float shade = 1 - area;
+        shade = pow(shade, 1.0 / 2.2);
+        color = vec4(vec3(shade), 1);
+    }
 }

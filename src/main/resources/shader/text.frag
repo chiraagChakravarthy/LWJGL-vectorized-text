@@ -6,7 +6,7 @@ layout (location=0) out vec4 color;
 
 uniform float[400] uAtlas;//at^2+bt+c
 uniform int uCount;//how many bezier curves form this glyph
-uniform float uZoom;
+uniform float uPixelSize;
 //size of pixel in glyph space
 //depending on program to provide this info
 
@@ -71,17 +71,13 @@ float integrate(float a, float b, float d, float e, float f, float t0, float t1)
 float rectIntegrate(float a, float b, float t0, float t1){
     t0 = clamp(t0, 0.0, 1.0);
     t1 = clamp(t1, 0.0, 1.0);
-    return (a*t1*t1+b*t1-a*t0*t0-b*t0)*uZoom*scale;
-}
-
-int getBit(float t){
-    return floatBitsToInt(t)&3;
+    return (a*t1*t1+b*t1-a*t0*t0-b*t0)* uPixelSize *scale;
 }
 
 float calcArea(){
     float roots[8];
-    vec2 maxPos = pos + vec2(uZoom)*(0.5+scale/2);
-    vec2 minPos = pos + vec2(uZoom)*(0.5-scale/2);
+    vec2 maxPos = pos + vec2(uPixelSize)*(0.5+scale/2);
+    vec2 minPos = pos + vec2(uPixelSize)*(0.5-scale/2);
     float overlap = 0;
 
     for(int i = 0; i < uCount; i++) {
@@ -143,7 +139,7 @@ float calcArea(){
 
         float intComp = 0;
         for(int j = 0; j < 3; j++){
-            int i0 = index[j*2+1];//12,
+            int i0 = index[j*2+1];
             int i1 = index[j*2+2];
             float t0 = roots[i0];
             float t1 = roots[i1];
@@ -157,7 +153,7 @@ float calcArea(){
 
 void main (){
     float area = calcArea();
-    area = area/ uZoom / uZoom/scale/scale;
+    area = area/ uPixelSize / uPixelSize /scale/scale;
     area = clamp(area, 0.0, 1.0);
     float shade = 1-area;
     shade = pow(shade, 1.0/2.2);

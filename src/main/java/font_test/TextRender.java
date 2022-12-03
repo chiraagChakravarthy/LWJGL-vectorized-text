@@ -18,8 +18,8 @@ import static org.lwjgl.stb.STBTruetype.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class TextRender {
-    private final int WIDTH = 768;
-    private final int HEIGHT = 768;
+    private final int WIDTH = 678;
+    private final int HEIGHT = 678;
 
     private long window;
     private Shader shader;
@@ -33,8 +33,8 @@ public class TextRender {
     private int count;//number of beziers in the glyph
 
 
-    private float zoom = 2;//how many glyph space units per screen pixel
-    private float gx=100f, gy=100f;//pixel space coordinates of the origin of the glyph
+    private float pixelSize = 1;//how many glyph space units per screen pixel
+    private float gx=100.4f, gy=100.4f;//pixel space coordinates of the origin of the glyph
 
     public void run() {
         makeWindow();
@@ -138,16 +138,16 @@ public class TextRender {
         /*
         GIVEN:
         * glyph bounds
-        * zoom
+        * pixel size
         * position of glyph origin on screen
         we want to find the screenspace coords for each corner of the glyph bounds
          */
 
 
-        float gx0 = Math.round(gx+this.x0/zoom),
-                gy0 = Math.round(gy+this.y0/zoom),
-                gx1 = Math.round(gx+this.x1/zoom),
-                gy1 = Math.round(gy+this.y1/zoom);
+        float gx0 = Math.round(gx+this.x0/ pixelSize),
+                gy0 = Math.round(gy+this.y0/ pixelSize),
+                gx1 = Math.round(gx+this.x1/ pixelSize),
+                gy1 = Math.round(gy+this.y1/ pixelSize);
 
         float[] vertices = new float[]{
                 gx0, gy0, x0, y0,//bottom left
@@ -189,7 +189,10 @@ public class TextRender {
         Renderer renderer = new Renderer();
 
         Matrix4f proj = new Matrix4f();
-        proj.ortho(0, WIDTH, 0, HEIGHT, -1.0f, 1.0f);
+        float r = HEIGHT / (float)WIDTH;
+        //proj.ortho(-1.0f * r, r, -1.0f, 1.0f, -1.0f, 1.0f);
+
+        proj = proj.ortho(0, WIDTH, 0, HEIGHT, -1.0f, 1.0f);
 
         Matrix4f view = new Matrix4f();
 
@@ -200,10 +203,10 @@ public class TextRender {
 
         shader.setUniformMat4f("u_MVP", mvp);
         shader.setUniformFloatArray("uAtlas", atlas);
-        shader.setUniform1f("uZoom", zoom);
         shader.setUniform1i("uCount", count);
 
         do {
+            shader.setUniform1f("uPixelSize", pixelSize);
             fps();
             renderer.clear();
             renderer.draw(va, ib, shader);
