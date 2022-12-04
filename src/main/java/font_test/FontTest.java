@@ -1,25 +1,36 @@
 package font_test;
 
 import org.lwjgl.stb.STBTTFontinfo;
-import org.lwjgl.stb.STBTTKerningentry;
 import org.lwjgl.stb.STBTTVertex;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static font_test.FileUtil.loadFont;
 import static org.lwjgl.stb.STBTruetype.*;
 
 public class FontTest {
+
     public static void main(String[] args) throws IOException {
         STBTTFontinfo info = loadFont("/font/arial.ttf");
 
         int glyph = 58;
 
 
+        int kern = stbtt_GetCodepointKernAdvance(info, 'A', 'V');
+        int[] advance = new int[1], leftBearing = new int[1];
+        stbtt_GetCodepointHMetrics(info, 'A', advance, leftBearing);
+        /*
+        advance: distance from origin of current glyph to origin of next glyph
+        kern: custom addendum to advance between current and next glyph
+        leftBearing: offset from origin to left edge of character
+         */
 
-        System.out.println(stbtt_GetCodepointKernAdvance(info, 'A', 'V'));
+        int[] ascent = new int[1], descent = new int[1], lineGap = new int[1];
+        stbtt_GetFontVMetrics(info, ascent, descent, lineGap);
+
+        System.out.printf("ascent: %d, descent: %d, linegap: %d%n", ascent[0], descent[0], lineGap[0]);
+        System.out.println(stbtt_ScaleForMappingEmToPixels(info, 10));
 
         STBTTVertex.Buffer vertices = stbtt_GetCodepointShape(info, 'a');
         int count = vertices.remaining();
@@ -59,9 +70,7 @@ public class FontTest {
             //System.out.printf("(%d,%d)%n", ax, ay);
             //System.out.printf("(%d,%d)%n", vertex.cx(), vertex.cy());
         }
-
     }
-
 
 
     static float climp(float a, float min){

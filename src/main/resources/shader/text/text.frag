@@ -5,15 +5,15 @@ layout (location=0) out vec4 color;
 #define scale 1.0
 //scaling factor of intersect window for pixel
 
-uniform int uCount;//how many bezier curves form this glyph
 uniform float uPixelSize;
-uniform samplerBuffer
+uniform isamplerBuffer uAtlas;
 
 //size of pixel in glyph space
 //depending on program to provide this info
 
 in vec2 vGlyphPos;//position in glyph space
 in int vGlyph;//which glyph to render
+in vec3 vTint;
 
 vec2 findRoots(float a, float b, float c, int s){
     vec2 roots = vec2(1);
@@ -70,9 +70,13 @@ float calcArea(){
     float overlap = 0;
 
     //iterate through beziers
-    for (int i = 0; i < uCount; i++) {
-        float a = uAtlas[i*6], b = uAtlas[i*6+1], c = uAtlas[i*6+2],
-                d = uAtlas[i*6+3], e = uAtlas[i*6+4], f = uAtlas[i*6+5];
+
+    int start = texelFetch(uAtlas, vGlyph).x, end = texelFetch(uAtlas, vGlyph+1);
+
+    for (int i = start; i < end; i++) {
+        int j = i*6;
+        float a = texelFetch(uAtlas, j).r, b = texelFetch(uAtlas, j+1).r, c = texelFetch(uAtlas, j+2).r,
+                d = texelFetch(uAtlas, j+3).r, e = texelFetch(uAtlas, j+4).r, f = texelFetch(uAtlas, j+5).r;
 
         vec2 roots1 = findRoots(a, b, c - minPos.x, 0);//left
         vec2 roots2 = findRoots(a, b, c - maxPos.x, 1);//right
@@ -248,8 +252,6 @@ void main () {
     } else {
         area = area / uPixelSize / uPixelSize / scale / scale;
         area = clamp(area, 0.0, 1.0);
-        float shade = 1 - area;
-        shade = pow(shade, 1.0 / 2.2);
-        color = vec4(vec3(shade), 1);
+        color = vec4(vTint, area);
     }
 }
