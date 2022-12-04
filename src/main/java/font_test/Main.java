@@ -3,6 +3,7 @@ package font_test;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferStrategy;
+import java.io.IOException;
 
 public class Main extends Canvas implements Runnable, KeyListener, MouseListener, MouseMotionListener {
     private static Main instance;
@@ -137,7 +138,19 @@ public class Main extends Canvas implements Runnable, KeyListener, MouseListener
         Graphics2D g = (Graphics2D)bs.getDrawGraphics();
         g.setColor(Color.DARK_GRAY);
         g.fillRect(0, 0, window.getWidth(), window.getHeight());
-        test.render(g);
+        g.setColor(Color.WHITE);
+        Font font = null;
+        try {
+            font = Font.createFont(0, getClass().getResourceAsStream("/font/arial.ttf"));
+        } catch (FontFormatException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        font = font.deriveFont(300f);
+        g.setFont(font);
+        g.drawString("aaa", 100, 300);
+        //test.render(g);
         g.dispose();
         bs.show();
     }

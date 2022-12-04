@@ -1,18 +1,15 @@
 package font_test;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static font_test.FileUtil.initFont;
+import static font_test.FileUtil.loadFont;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
 import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
@@ -28,7 +25,7 @@ public class GlyphRenderer6 {
         quadratic = new ArrayList[300];
 
         try {
-            fontinfo = initFont("/font/arial.ttf");
+            fontinfo = loadFont("/font/arial.ttf");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

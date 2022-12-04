@@ -1,18 +1,14 @@
 package font_test;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import static font_test.FileUtil.initFont;
+import static font_test.FileUtil.loadFont;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
 import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
@@ -28,7 +24,7 @@ public class GlyphRenderer8 {
         glyphs = new ArrayList[300];
 
         try {
-            fontinfo = initFont("/font/arial.ttf");
+            fontinfo = loadFont("/font/arial.ttf");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -66,7 +62,7 @@ public class GlyphRenderer8 {
     }
     int ticks;
     public void tick() {
-        ticks++;
+        //ticks++;
     }
 
     private float clamp(float a, float min, float max){
@@ -78,7 +74,7 @@ public class GlyphRenderer8 {
         return a;
     }
 
-    float zoom = 160;
+    float zoom = 20;
 
     int scale = 1;//number of screen pixels per buffer pixel
 
@@ -89,8 +85,8 @@ public class GlyphRenderer8 {
         height -= height%scale;
 
         BufferedImage image = new BufferedImage(width/scale, height/scale, BufferedImage.TYPE_INT_ARGB);
-        for (int x = 0; x < 100; x++) {
-            for (int y = 0; y < 100; y++) {
+        for (int x = 0; x < 300; x++) {
+            for (int y = 0; y < 300; y++) {
 
                 //float qx = (float) ((x-.1f*width/scale+Math.cos(ticks*.01f)*25)*zoom);
                 //float qy = (float) ((y-.1f*height/scale+Math.sin(ticks*.01f)*25)*zoom);

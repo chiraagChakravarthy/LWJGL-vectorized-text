@@ -1,27 +1,33 @@
 package font_test;
 
 import org.lwjgl.stb.STBTTFontinfo;
+import org.lwjgl.stb.STBTTKerningentry;
 import org.lwjgl.stb.STBTTVertex;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
-import static font_test.FileUtil.initFont;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphBox;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
+import static font_test.FileUtil.loadFont;
+import static org.lwjgl.stb.STBTruetype.*;
 
 public class FontTest {
     public static void main(String[] args) throws IOException {
-        STBTTFontinfo info = initFont("/font/arial.ttf");
+        STBTTFontinfo info = loadFont("/font/arial.ttf");
 
-        int glyph = 68;
-        STBTTVertex.Buffer vertices = stbtt_GetGlyphShape(info, glyph);
+        int glyph = 58;
+
+
+
+        System.out.println(stbtt_GetCodepointKernAdvance(info, 'A', 'V'));
+
+        STBTTVertex.Buffer vertices = stbtt_GetCodepointShape(info, 'a');
         int count = vertices.remaining();
 
         ArrayList<int[]> quadratic = new ArrayList<>(), linear = new ArrayList<>();
 
         int[] x0a = new int[1], x1a = new int[1], y0a = new int[1], y1a = new int[1];
-        stbtt_GetGlyphBox(info, glyph, x0a, y0a, x1a, y1a);
+        stbtt_GetCodepointBox(info, glyph, x0a, y0a, x1a, y1a);
         int x0 = x0a[0];
         int x1 = x1a[0];
         int y0 = y0a[0];
@@ -42,15 +48,16 @@ public class FontTest {
                 int bx = vertex.cx(), by = vertex.cy();
                 STBTTVertex nextVertex = vertices.get(i-1);
                 int cx = nextVertex.x(), cy = nextVertex.y();
-                System.out.printf("(%ft^2+%dt+%d, %dt^2+%dt+%d)%n", climp(ax-2*bx+cx, 0.01f), 2*bx-2*cx, cx, ay-2*by+cy, 2*by-2*cy, cy);
+                System.out.printf("(%dt^2+%dt+%d, %dt^2+%dt+%d)%n", ax-2*bx+cx, 2*bx-2*cx, cx, ay-2*by+cy, 2*by-2*cy, cy);
                 quadratic.add(new int[]{ax-2*bx+cx, 2*bx-2*cx, cx, ay-2*by+cy, 2*by-2*cy, cy});
             } else if(type==2){
                 STBTTVertex nextVertex = vertices.get(i-1);
                 int bx = nextVertex.x(), by = nextVertex.y();
-                System.out.printf("(%ft^2+%dt+%d, %dt^2+%dt+%d)%n", 0.01f, ax-bx, bx, 0, ay-by, by);
+                System.out.printf("(%dt^2+%dt+%d, %dt^2+%dt+%d)%n", 0, ax-bx, bx, 0, ay-by, by);
                 linear.add(new int[]{ax-bx, bx, ay-by, by});
             }
-
+            //System.out.printf("(%d,%d)%n", ax, ay);
+            //System.out.printf("(%d,%d)%n", vertex.cx(), vertex.cy());
         }
 
     }

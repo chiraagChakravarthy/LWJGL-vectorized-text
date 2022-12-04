@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
 public class FileUtil {
-    public static STBTTFontinfo initFont(String font) throws IOException {
+    public static STBTTFontinfo loadFont(String font) throws IOException {
         byte[] bytes = readFile(font);
 
         ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
@@ -23,7 +23,7 @@ public class FileUtil {
     }
 
     public static byte[] readFile(String font) throws IOException {
-        InputStream input = TextRender.class.getResourceAsStream(font);
+        InputStream input = GpuGlyphRenderer.class.getResourceAsStream(font);
         byte[] bytes = new byte[(int) input.available()];
         DataInputStream dataInputStream = new DataInputStream(input);
         dataInputStream.readFully(bytes);
