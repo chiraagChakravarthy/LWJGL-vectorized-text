@@ -17,7 +17,8 @@ import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointShape;
 import static org.lwjgl.stb.STBTruetype.stbtt_ScaleForMappingEmToPixels;
 
 public class VectorFont {
-    protected final float size, scale;
+    public final float size;
+    protected final float scale;
     protected final int atlasTexture;
     protected final STBTTFontinfo font;
 
@@ -33,15 +34,21 @@ public class VectorFont {
 
         this.scale = stbtt_ScaleForMappingEmToPixels(font, size);
         int atlasBuffer = glGenBuffers();
-        int[] atlasArray = genAtlas();
+        int[] atlas = genAtlas();
+
+        int start = atlas['a'], end = atlas['b'];
+        for (int i = start; i < end; i++) {
+            int j = i*6+257;
+            System.out.printf("(%dt^2+%dt+%d,%dt^2+%dt+%d)%n", atlas[j], atlas[j+1], atlas[j+2], atlas[j+3], atlas[j+4], atlas[j+5]);
+        }
+
 
         glBindBuffer(GL_ARRAY_BUFFER, atlasBuffer);
-        glBufferData(GL_ARRAY_BUFFER, atlasArray, GL_STATIC_READ);
+        glBufferData(GL_ARRAY_BUFFER, atlas, GL_STATIC_READ);
 
         atlasTexture = glGenTextures();
         glBindTexture(GL_TEXTURE_BUFFER, atlasTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
-        //glDeleteBuffers(atlasBuffer); not sure
     }
 
     private int[] genAtlas(){
@@ -49,57 +56,64 @@ public class VectorFont {
         int[] index = new int[257];
 
         int curr = 0;
-        index[0] = 257;
+        index[0] = 0;
 
         //all unicode chars
-        for (int i = 0; i < 255; i++) {
+        for (int i = 0; i < 256; i++) {
             STBTTVertex.Buffer glyphShape = stbtt_GetCodepointShape(font, i);
-            if(glyphShape == null){
-
-                continue;
+            int[] glyph = null;
+            if(glyphShape != null){
+                int count = glyphShape.remaining();
+                glyph = new int[count*6];
+                curr += extractGlyphShape(glyphShape, count, glyph);
             }
-            int count = glyphShape.remaining();
-            curr += count;
-            index[i+1] = curr+257;
-            int[] glyph = new int[count*6];
-            int k = 0;
-
-            for(int j = count-1; j >= 0; j--){
-                STBTTVertex vertex = glyphShape.get(k);
-                int ax = vertex.x(), ay = vertex.y();
-                byte type = vertex.type();
-                STBTTVertex nextVertex = glyphShape.get(i-1);
-                if(type==3){
-                    int bx = vertex.cx(), by = vertex.cy();
-                    int cx = nextVertex.x(), cy = nextVertex.y();
-                    glyph[k] =  ax-2*bx+cx;
-                    glyph[k+1] = 2*bx-2*cx;
-                    glyph[k+2] = cx;
-                    glyph[k+3] = ay-2*by+cy;
-                    glyph[k+4] = 2*by-2*cy;
-                    glyph[k+5] = cy;
-                } else if(type==2){
-                    int bx = nextVertex.x(), by = nextVertex.y();
-                    glyph[k] = 0;
-                    glyph[k+1] = ax-bx;
-                    glyph[k+2] = bx;
-                    glyph[k+3] = 0;
-                    glyph[k+4] = ay-by;
-                    glyph[k+5] = by;
-                }
-                k += 6;
-            }
+            index[i+1] = curr;
             glyphs[i] = glyph;
         }
+
         int[] atlas = new int[257+curr*6];
         System.arraycopy(index, 0, atlas, 0, 257);
-        curr = 0;
-        for(int[] glyph : glyphs){
-            System.arraycopy(glyph, 0, atlas, curr, glyph.length);
-            curr += glyph.length;
+
+        for(int i = 0; i < glyphs.length; i++){
+            int[] glyph = glyphs[i];
+            int start = index[i], end = index[i+1];
+            if(glyph != null) {
+                System.arraycopy(glyph, 0, atlas, start*6+257, (end-start)*6);
+            }
         }
 
         return atlas;
+    }
+    private static int extractGlyphShape(STBTTVertex.Buffer glyphShape, int count, int[] glyph) {
+        int k = 0;
+        for(int j = count - 1; j >= 0; j--){
+            STBTTVertex vertex = glyphShape.get(j);
+            int ax = vertex.x(), ay = vertex.y();
+            byte type = vertex.type();
+            if(type==3){
+                STBTTVertex nextVertex = glyphShape.get(j - 1);
+                int bx = vertex.cx(), by = vertex.cy();
+                int cx = nextVertex.x(), cy = nextVertex.y();
+                glyph[k] =  ax-2*bx+cx;
+                glyph[k+1] = 2*bx-2*cx;
+                glyph[k+2] = cx;
+                glyph[k+3] = ay-2*by+cy;
+                glyph[k+4] = 2*by-2*cy;
+                glyph[k+5] = cy;
+                k += 6;
+            } else if(type==2){
+                STBTTVertex nextVertex = glyphShape.get(j - 1);
+                int bx = nextVertex.x(), by = nextVertex.y();
+                glyph[k] = 0;
+                glyph[k+1] = ax-bx;
+                glyph[k+2] = bx;
+                glyph[k+3] = 0;
+                glyph[k+4] = ay-by;
+                glyph[k+5] = by;
+                k += 6;
+            }
+        }
+        return k/6;
     }
 
     public float getSize() {

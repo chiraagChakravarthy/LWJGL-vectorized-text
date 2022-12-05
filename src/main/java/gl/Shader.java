@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.GL20.*;
 
 
 public class Shader {
-    private int program;
+    public final int program;
     private final HashMap<String, Integer> uniformLocationCache = new HashMap<>();
     private static final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
 
@@ -20,7 +20,7 @@ public class Shader {
         String vsCode = readShader(vertexFilePath);
         String fsCode = readShader(fragmentFilePath);
 
-        createShader(vsCode, fsCode);
+        program = createShader(vsCode, fsCode);
 
         glUseProgram(program);
     }
@@ -49,8 +49,8 @@ public class Shader {
         return data;
     }
 
-    private void createShader(String vsCode, String fsCode) {
-        program = glCreateProgram();
+    private int createShader(String vsCode, String fsCode) {
+        int program = glCreateProgram();
 
         int vs = compileShader(GL_VERTEX_SHADER, vsCode);
         int fs = compileShader(GL_FRAGMENT_SHADER, fsCode);
@@ -62,7 +62,7 @@ public class Shader {
 
         glDeleteShader(vs);
         glDeleteShader(fs);
-
+        return program;
     }
 
     private int compileShader(int type, String src) {
@@ -114,5 +114,9 @@ public class Shader {
 
     public void setUniform1f(String name, float value) {
         glUniform1f(getUniformLocation(name), value);
+    }
+
+    public void setUniformIntArray(String name, int[] value) {
+        glUniform1iv(getUniformLocation(name), value);
     }
 }

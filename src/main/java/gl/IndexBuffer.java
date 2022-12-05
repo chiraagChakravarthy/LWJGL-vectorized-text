@@ -3,7 +3,7 @@ package gl;
 import static org.lwjgl.opengl.GL15.*;
 
 public class IndexBuffer {
-    private final int ibo;
+    public final int ibo;
     private final int count;
 
     public IndexBuffer(int[] indexes) {

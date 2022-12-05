@@ -17,7 +17,7 @@ import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GpuGlyphRenderer {
-    private final int WIDTH = 678;
+    private final int WIDTH = 1200;
     private final int HEIGHT = 678;
 
     private long window;
@@ -34,6 +34,11 @@ public class GpuGlyphRenderer {
 
     public void run() {
         makeWindow();
+        int[] viewport = new int[2];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        int width = viewport[0];
+        int height = viewport[1];
+
         try {
             fontinfo = loadFont("/font/arial.ttf");
         } catch (IOException e) {
@@ -126,7 +131,6 @@ public class GpuGlyphRenderer {
         we want to find the screenspace coords for each corner of the glyph bounds
          */
 
-
         float gx0 = gx+this.x0/ pixelSize,
                 gy0 = gy+this.y0/ pixelSize,
                 gx1 = gx+this.x1/ pixelSize,
@@ -166,13 +170,11 @@ public class GpuGlyphRenderer {
     }
 
     private void render() {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
         glEnable(GL_BLEND);
 
         Renderer renderer = new Renderer();
 
         Matrix4f proj = new Matrix4f();
-        float r = HEIGHT / (float)WIDTH;
         //proj.ortho(-1.0f * r, r, -1.0f, 1.0f, -1.0f, 1.0f);
 
         proj = proj.ortho(0, WIDTH, 0, HEIGHT, -1.0f, 1.0f);

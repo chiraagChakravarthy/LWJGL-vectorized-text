@@ -3,7 +3,7 @@ package gl;
 import static org.lwjgl.opengl.GL30.*;
 
 public class VertexArray {
-    private int vao;
+    public final int vao;
 
     public VertexArray() {
         vao = glGenVertexArrays();

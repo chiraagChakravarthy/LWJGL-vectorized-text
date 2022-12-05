@@ -2,7 +2,7 @@
 layout (location=0) out vec4 color;
 
 #define epsilon 0.0001
-#define scale 1.0
+#define window 1.0
 //scaling factor of intersect window for pixel
 
 uniform float uPixelSize;
@@ -12,7 +12,7 @@ uniform isamplerBuffer uAtlas;
 //depending on program to provide this info
 
 in vec2 vGlyphPos;//position in glyph space
-in int vGlyph;//which glyph to render
+in float vGlyph;//which glyph to render
 in vec3 vTint;
 
 vec2 findRoots(float a, float b, float c, int s){
@@ -61,20 +61,21 @@ float integrate(float a, float b, float d, float e, float f, float t0, float t1)
 float rectIntegrate(float a, float b, float t0, float t1){
     t0 = clamp(t0, 0.0, 1.0);
     t1 = clamp(t1, 0.0, 1.0);
-    return (a*t1*t1+b*t1-a*t0*t0-b*t0)* uPixelSize *scale;
+    return (a*t1*t1+b*t1-a*t0*t0-b*t0)* uPixelSize * window;
 }
 
 float calcArea(){
-    vec2 maxPos = vGlyphPos + vec2(uPixelSize)*(0.5+scale/2);
-    vec2 minPos = vGlyphPos + vec2(uPixelSize)*(0.5-scale/2);
+    vec2 maxPos = vGlyphPos + vec2(uPixelSize)*(0.5+ window /2);
+    vec2 minPos = vGlyphPos + vec2(uPixelSize)*(0.5- window /2);
     float overlap = 0;
 
-    //iterate through beziers
+    int iGlyph = int(vGlyph);
 
-    int start = texelFetch(uAtlas, vGlyph).x, end = texelFetch(uAtlas, vGlyph+1);
+    //iterate through beziers
+    int start = texelFetch(uAtlas, iGlyph).x, end = texelFetch(uAtlas, iGlyph+1).x;
 
     for (int i = start; i < end; i++) {
-        int j = i*6;
+        int j = i*6+257;
         float a = texelFetch(uAtlas, j).r, b = texelFetch(uAtlas, j+1).r, c = texelFetch(uAtlas, j+2).r,
                 d = texelFetch(uAtlas, j+3).r, e = texelFetch(uAtlas, j+4).r, f = texelFetch(uAtlas, j+5).r;
 
@@ -247,11 +248,9 @@ float calcArea(){
 
 void main () {
     float area = calcArea();
-    if (area == -1) {
-        color = vec4(1, 0, 0, 1);
-    } else {
-        area = area / uPixelSize / uPixelSize / scale / scale;
-        area = clamp(area, 0.0, 1.0);
-        color = vec4(vTint, area);
-    }
+    area = area / uPixelSize / uPixelSize / window / window;
+    area = clamp(area, 0.0, 1.0);
+    float shade = 1 - area;
+    shade = pow(shade, 1.0 / 2.2);
+    color = vec4(vec3(shade), 1);
 }
