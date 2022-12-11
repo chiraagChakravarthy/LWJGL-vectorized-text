@@ -82,7 +82,7 @@ public class TextRendererTest {
         do {
             glClear(GL_COLOR_BUFFER_BIT);
             fps();
-            TextRenderer.drawText(font, 100, 100+off, "Hello");
+            TextRenderer.drawText("Hello", 100, 100+off, font, Color.BLACK);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
 

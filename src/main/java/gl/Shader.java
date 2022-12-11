@@ -119,4 +119,8 @@ public class Shader {
     public void setUniformIntArray(String name, int[] value) {
         glUniform1iv(getUniformLocation(name), value);
     }
+
+    public void setUniform2f(String name, float x, float y) {
+        glUniform2f(getUniformLocation(name), x, y);
+    }
 }

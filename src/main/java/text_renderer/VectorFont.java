@@ -13,8 +13,7 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_R32I;
 import static org.lwjgl.opengl.GL31.GL_TEXTURE_BUFFER;
 import static org.lwjgl.opengl.GL31.glTexBuffer;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointShape;
-import static org.lwjgl.stb.STBTruetype.stbtt_ScaleForMappingEmToPixels;
+import static org.lwjgl.stb.STBTruetype.*;
 
 public class VectorFont {
 
@@ -68,19 +67,31 @@ public class VectorFont {
             glyphs[i] = glyph;
         }
 
-        int[] atlas = new int[257+curr*6];
+        int[] atlas = new int[257+256*4+curr*6];
         System.arraycopy(index, 0, atlas, 0, 257);
 
         for(int i = 0; i < glyphs.length; i++){
             int[] glyph = glyphs[i];
             int start = index[i], end = index[i+1];
             if(glyph != null) {
-                System.arraycopy(glyph, 0, atlas, start*6+257, (end-start)*6);
+                System.arraycopy(glyph, 0, atlas, start*6+257+256*4, (end-start)*6);
+                addBounds(atlas, i);
             }
         }
 
         return atlas;
     }
+
+    private void addBounds(int[] atlas, int i) {
+        int[] x0a = new int[1], x1a = new int[1], y0a = new int[1], y1a = new int[1];
+        stbtt_GetCodepointBox(font, i, x0a, y0a, x1a, y1a);
+        int x0 = x0a[0], x1 = x1a[0], y0 = y0a[0], y1 = y1a[0];
+        atlas[257+ i *4] = x0;
+        atlas[257+ i *4+1] = y0;
+        atlas[257+ i *4+2] = x1;
+        atlas[257+ i *4+3] = y1;
+    }
+
     private static int extractGlyphShape(STBTTVertex.Buffer glyphShape, int count, int[] glyph) {
         int k = 0;
         for(int j = count - 1; j >= 0; j--){

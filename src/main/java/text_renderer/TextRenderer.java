@@ -1,10 +1,9 @@
 package text_renderer;
 
-import gl.IndexBuffer;
 import gl.Shader;
 import org.joml.Matrix4f;
-import org.lwjgl.stb.STBTTFontinfo;
 
+import java.awt.*;
 import java.io.IOException;
 
 import static font_test.FileUtil.readFile;
@@ -12,15 +11,19 @@ import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL31.GL_TEXTURE_BUFFER;
-import static org.lwjgl.stb.STBTruetype.*;
+import static org.lwjgl.opengl.GL31.glTexBuffer;
+import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointHMetrics;
+import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointKernAdvance;
 
 /**
  * renders vectorized text
  *
  */
 public class TextRenderer {
-    static IndexBuffer ib;
     static Shader shader;
+    static int textVao;
+
+    static int stringBuffer, stringBufferTex;
 
     public static final int MAX_LEN = 1000;
 
@@ -29,6 +32,23 @@ public class TextRenderer {
      */
     public static void init(){//inits shaders
         initShaders();
+        initVao();
+        initStringBuffer();
+    }
+
+    private static void initStringBuffer(){
+        int stringBuffer = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, stringBuffer);
+        glBufferData(GL_ARRAY_BUFFER, MAX_LEN*2, GL_STATIC_READ);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        int bufferTex = glGenTextures();
+        glBindTexture(GL_TEXTURE_BUFFER, bufferTex);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, stringBuffer);
+        glBindTexture(GL_TEXTURE_BUFFER, 0);
+
+        TextRenderer.stringBuffer = stringBuffer;
+        TextRenderer.stringBufferTex = bufferTex;
     }
 
     private static void initShaders() {
@@ -40,148 +60,139 @@ public class TextRenderer {
         uPixelSize = glGetUniformLocation(shader, "uFontSize");
         glUniform1i(uAtlas, 0);*/
         shader = new Shader("/shader/text/text.vert", "/shader/text/text.frag");
+        shader.bind();
+        shader.setUniform1i("uAtlas", 0);
+        shader.setUniform1i("uString", 1);
+        shader.unbind();
     }
 
-    public static void drawText(VectorFont font, float x, float y, String text){
-        int textVao = genTextVao(font, x, y, text);
-        drawText(font, textVao);
-        glDeleteVertexArrays(textVao);
-    }
-
-    public static void drawText(VectorFont font, int textVao){
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        shader.setUniform1f("uPixelSize", 1f/font.scale);
-        setMvp();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_BUFFER, font.atlasTexture);
-
-        glBindVertexArray(textVao);
-        glUseProgram(shader.program);
-        glDrawElements(GL_TRIANGLES, MAX_LEN*6, GL_UNSIGNED_INT, 0);
-    }
-
-    private static void setMvp(){
-        int[] viewport = new int[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        int x = viewport[0];
-        int y = viewport[1];
-        int w = viewport[2];
-        int h = viewport[3];
-
-        Matrix4f mvp = new Matrix4f().ortho(x, x+w, y, y+h, -1, 1);
-        shader.setUniformMat4f("u_MVP", mvp);
-    }
-
-    private static int genTextVao(VectorFont font, float x, float y, String text){
-        float scale = font.scale;
-        //x, y are in pixels
-        //1 glyph unit = 1 pixel * scale
-        char[] characters = text.toCharArray();
-        int len = Math.min(characters.length, MAX_LEN);
-
-        float[] vertices = new float[len*4*4];//sx, sy, gx, gy
-        int[] glyphs = new int[len*4];
-
-        populateVertices(font, x, y, scale, len, characters, vertices, glyphs);
-
-        int vao = assembleVao(vertices, glyphs);
-
-        return vao;
-    }
-
-    private static int assembleVao(float[] vertices, int[] glyphs) {
+    private static void initVao(){
         int vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
-        int buffer = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, false, 16, 0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, 16, 8);
+        int vbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        int[] vertexAr = new int[MAX_LEN*12];
 
-        int buffer2 = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, buffer2);
-        glBufferData(GL_ARRAY_BUFFER, glyphs, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(2);
-        glVertexAttribIPointer(2, 1, GL_INT, 4, 0);
+        int[] vertex = new int[]{
+          0, 0, 0,
+          0, 1, 0,
+          1, 1, 0,
+          1, 0, 0
+        };
 
-        int[] indexArray = new int[glyphs.length/4*6];
-        for (int i = 0; i < indexArray.length/6; i++) {
-            indexArray[i*6] = i*4;
-            indexArray[i*6+1] = i*4+1;
-            indexArray[i*6+2] = i*4+2;
-            indexArray[i*6+3] = i*4+2;
-            indexArray[i*6+4] = i*4+3;
-            indexArray[i*6+5] = i*4;
+        for (int i = 0; i < MAX_LEN; i++) {
+            int j = i*12;
+            vertex[2] = i;
+            vertex[5] = i;
+            vertex[8] = i;
+            vertex[11] = i;
+            System.arraycopy(vertex, 0, vertexAr, j, 12);
         }
+
+        glBufferData(GL_ARRAY_BUFFER, vertexAr, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribIPointer(0, 2, GL_INT, 12, 0);
+        glVertexAttribIPointer(1, 1, GL_INT, 12, 8);
+
         int ibo = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexArray, GL_STATIC_DRAW);
+
+        int[] indexAr = new int[6*MAX_LEN];
+        for (int i = 0; i < MAX_LEN; i++) {
+            int j = i*6,
+                    k = i*4;
+            indexAr[j] = k;
+            indexAr[j+1] = k+1;
+            indexAr[j+2] = k+2;
+            indexAr[j+3] = k+2;
+            indexAr[j+4] = k+3;
+            indexAr[j+5] = k;
+        }
+
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexAr, GL_STATIC_DRAW);
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        return vao;
+        TextRenderer.textVao = vao;
     }
 
-    private static void populateVertices(VectorFont font, float x, float y, float scale, int len, char[] characters, float[] vertex, int[] glyphs) {
-        STBTTFontinfo info = font.font;
-        int current = 0;
-        for (int i = 0; i < len; i++) {
-            int code = characters[i];
+    public static void drawText(String text, float x, float y, VectorFont font, Color color){
+        int len = Math.min(text.length(), MAX_LEN);
 
-            int[] x0a = new int[1], x1a = new int[1], y0a = new int[1], y1a = new int[1];
-            stbtt_GetCodepointBox(info, code, x0a, y0a, x1a, y1a);
-            float x0 = x0a[0], x1 = x1a[0], y0 = y0a[0], y1 = y1a[0];
+        uploadString(text, len, font);
 
-            int[] advance = new int[1], leftBearing = new int[1];
-            stbtt_GetCodepointHMetrics(info, code, advance, leftBearing);
+        drawText(font, x, y, len, color);
+    }
 
-            float gx = x + current*scale, gy = y;
-            appendGlyphVertices(scale, vertex, glyphs, i, code, x0, x1, y0, y1, gx, gy);
+    public static void drawText(VectorFont font, float x, float y, int len, Color color){
+        shader.bind();
+        setUniforms(color, font, x, y);
 
-            //glyph space origin: (curr, 0)
-            //screen space origin: (x+curr*scale, y)
-            int kern = 0;
-            if(i<len-1) {
-                kern = stbtt_GetGlyphKernAdvance(info, code, characters[i + 1]);
-            }
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            current += advance[0] + kern;
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_BUFFER, font.atlasTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, stringBufferTex);
+
+        glBindVertexArray(textVao);
+
+        glDrawElements(GL_TRIANGLES, len*6, GL_UNSIGNED_INT, 0);
+    }
+
+    private static void setUniforms(Color color, VectorFont font, float x, float y){
+        int[] viewport = new int[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        int vx = viewport[0];
+        int vy = viewport[1];
+        int vw = viewport[2];
+        int vh = viewport[3];
+
+        Matrix4f mvp = new Matrix4f().ortho(vx, vx+vw, vy, vy+vh, -1, 1);
+        shader.setUniformMat4f("u_MVP", mvp);
+
+        shader.setUniform4f("u_tint",
+                color.getRed()/256f,
+                color.getGreen()/256f,
+                color.getBlue()/256f,
+                color.getAlpha()/256f);
+        shader.setUniform1f("uPixelSize", 1f/font.scale);
+        shader.setUniform2f("uTextPos", x, y);
+    }
+
+    private static void uploadString(String text, int len, VectorFont font){
+        char[] codepoints = text.toCharArray();
+
+        int[] data = new int[len*2];
+
+        data[0] = codepoints[0];
+        data[1] = 0;
+
+        int prevCodepoint = codepoints[0];
+
+        int advance = 0;
+        for (int i = 1; i < len; i++) {
+            int[] charWidth = new int[1], leftBearing = new int[1];
+            stbtt_GetCodepointHMetrics(font.font, prevCodepoint, charWidth, leftBearing);
+            advance += charWidth[0];
+
+            int codepoint = codepoints[i];
+            int kern = stbtt_GetCodepointKernAdvance(font.font, prevCodepoint, codepoint);
+            advance += kern;
+
+            data[i*2] = codepoint;
+            data[i*2+1] = advance;
+
+            prevCodepoint = codepoint;
         }
+        glBindBuffer(GL_ARRAY_BUFFER, stringBuffer);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, data);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    private static void appendGlyphVertices(float scale, float[] vertices, int[] glyphs, int i, int character, float x0, float x1, float y0, float y1, float gx, float gy) {
-        float gx0 = gx + x0 * scale,
-                gy0 = gy + y0 * scale,
-                gx1 = gx + x1 * scale,
-                gy1 = gy + y1 * scale;
-        float pad = 2;
-
-        float agx0 = (float) (Math.floor(gx0) - pad), agy0 = (float) (Math.floor(gy0) - pad),
-                agx1 = (float) (Math.ceil(gx1) + pad), agy1 = (float) (Math.ceil(gy1) + pad);
-
-        float dx0 = (gx0 - agx0) / scale, dx1 = (agx1 - gx1) / scale,
-                dy0 = (gy0 - agy0) / scale, dy1 = (agy1 - gy1) / scale;
-        x0 -= dx0;
-        y0 -= dy0;
-        x1 += dx1;
-        y1 += dy1;
-        float[] glyph = new float[]{
-                agx0, agy0, x0, y0,//bottom left
-                agx1, agy0, x1, y0,//bottom right
-                agx1, agy1, x1, y1,//top right
-                agx0, agy1, x0, y1,//top left
-        };
-        System.arraycopy(glyph, 0, vertices, i * 16, 16);
-        for (int j = 0; j < 4; j++) {
-            glyphs[i * 4 + j] = character;
-        }
-    }
 
     private static String readShader(String path) {
         String data;

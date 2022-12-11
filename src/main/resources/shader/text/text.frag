@@ -7,13 +7,13 @@ layout (location=0) out vec4 color;
 
 uniform float uPixelSize;
 uniform isamplerBuffer uAtlas;
+uniform vec4 u_tint;
 
 //size of pixel in glyph space
 //depending on program to provide this info
 
 in vec2 vGlyphPos;//position in glyph space
 in float vGlyph;//which glyph to render
-in vec3 vTint;
 
 vec2 findRoots(float a, float b, float c, int s){
     vec2 roots = vec2(1);
@@ -75,7 +75,7 @@ float calcArea(){
     int start = texelFetch(uAtlas, iGlyph).x, end = texelFetch(uAtlas, iGlyph+1).x;
 
     for (int i = start; i < end; i++) {
-        int j = i*6+257;
+        int j = i*6+257+256*4;
         float a = texelFetch(uAtlas, j).x, b = texelFetch(uAtlas, j+1).x, c = texelFetch(uAtlas, j+2).x,
                 d = texelFetch(uAtlas, j+3).x, e = texelFetch(uAtlas, j+4).x, f = texelFetch(uAtlas, j+5).x;
 
@@ -252,5 +252,5 @@ void main () {
     area = clamp(area, 0.0, 1.0);
     float shade = area;
     //shade = pow(shade, 1);
-    color = vec4(vTint, shade);
+    color = vec4(u_tint.rgb, shade*u_tint.a);
 }
