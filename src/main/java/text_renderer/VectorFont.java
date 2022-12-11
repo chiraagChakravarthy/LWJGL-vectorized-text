@@ -1,10 +1,8 @@
 package text_renderer;
 
-import font_test.FileUtil;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
 
-import java.awt.*;
 import java.io.IOException;
 
 import static org.lwjgl.opengl.GL11.glBindTexture;
@@ -45,6 +43,15 @@ public class VectorFont {
         atlasTexture = glGenTextures();
         glBindTexture(GL_TEXTURE_BUFFER, atlasTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
+    }
+
+
+    /**
+     * uses arial by default
+     * @param size pixel height of the font
+     */
+    public VectorFont(float size){
+        this("/font/arial.ttf", size);
     }
 
     private int[] genAtlas(){

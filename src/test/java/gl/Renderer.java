@@ -1,5 +1,7 @@
 package gl;
 
+import text_renderer.Shader;
+
 import static org.lwjgl.opengl.GL11.*;
 
 public class Renderer {

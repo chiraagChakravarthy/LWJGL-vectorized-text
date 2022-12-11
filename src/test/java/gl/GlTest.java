@@ -3,10 +3,10 @@ package gl;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import text_renderer.Shader;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -22,8 +22,8 @@ public class GlTest {
     }
 
     private void run() {
-        Shader pass1S = new Shader("/shader/gl_test/pass1.vert", "/shader/gl_test/pass1.frag");
-        Shader pass2S = new Shader("/shader/gl_test/pass2.vert", "/shader/gl_test/pass2.frag");
+        text_renderer.Shader pass1S = new text_renderer.Shader("/gl_test/pass1.vert", "/gl_test/pass1.frag");
+        text_renderer.Shader pass2S = new Shader("/gl_test/pass2.vert", "/gl_test/pass2.frag");
 
         int fbo = glGenFramebuffers();
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);

@@ -3,6 +3,7 @@ package gl;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import text_renderer.Shader;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -13,7 +14,7 @@ public class OpenGL {
     private final int HEIGHT = 768;
 
     private long window;
-    private Shader shader;
+    private text_renderer.Shader shader;
     private VertexArray va;
     private IndexBuffer ib;
 
@@ -73,7 +74,7 @@ public class OpenGL {
     }
 
     private void setupShaders() {
-        shader = new Shader("/shader/basic.vert", "/shader/basic.frag");
+        shader = new Shader("/basic.vert", "/basic.frag");
     }
 
     private void render() {

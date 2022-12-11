@@ -1,4 +1,4 @@
-package gl;
+package text_renderer;
 
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryUtil;
@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 
-import static font_test.FileUtil.readFile;
+import static text_renderer.FileUtil.readFile;
 import static org.lwjgl.opengl.GL20.*;
 
 

@@ -8,9 +8,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static font_test.FileUtil.loadFont;
+import static text_renderer.FileUtil.loadFont;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
-import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
 public class GlyphRenderer4 {
     Main main;

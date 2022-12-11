@@ -19,7 +19,7 @@ public class VertexBufferLayout {
     }
 
     public Element[] getElements() {
-        return elements.toArray(new VertexBufferLayout.Element[0]);
+        return elements.toArray(new Element[0]);
     }
 
     public void addFloat(int count) {

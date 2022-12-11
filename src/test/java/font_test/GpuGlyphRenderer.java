@@ -6,13 +6,15 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
+import text_renderer.Shader;
 
 import java.io.IOException;
 
-import static font_test.FileUtil.loadFont;
+import static text_renderer.FileUtil.loadFont;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.stb.STBTruetype.*;
+import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointBox;
+import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointShape;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GpuGlyphRenderer {
@@ -20,7 +22,7 @@ public class GpuGlyphRenderer {
     private final int HEIGHT = 678;
 
     private long window;
-    private Shader shader;
+    private text_renderer.Shader shader;
     private VertexArray va;
     private IndexBuffer ib;
     private STBTTFontinfo fontinfo;
@@ -167,7 +169,7 @@ public class GpuGlyphRenderer {
     }
 
     private void setupShaders() {
-        shader = new Shader("/shader/text_test/text.vert", "/shader/text_test/text3.frag");
+        shader = new Shader("/text_test/text.vert", "/text_test/text3.frag");
     }
 
     private void render() {

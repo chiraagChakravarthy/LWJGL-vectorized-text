@@ -9,9 +9,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static font_test.FileUtil.loadFont;
+import static text_renderer.FileUtil.loadFont;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
-import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
 public class GlyphRenderer5 {
     Main main;

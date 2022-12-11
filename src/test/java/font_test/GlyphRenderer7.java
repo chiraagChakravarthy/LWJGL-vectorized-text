@@ -7,19 +7,19 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
-import static font_test.FileUtil.loadFont;
+import static text_renderer.FileUtil.loadFont;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
-import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
-public class GlyphRenderer8 {
+public class GlyphRenderer7 {
     Main main;
     ArrayList<float[]>[] glyphs;
 
     STBTTFontinfo fontinfo;
     public int glyph=68;
 
-    public GlyphRenderer8(Main main) {
+    public GlyphRenderer7(Main main) {
         this.main = main;
         glyphs = new ArrayList[300];
 
@@ -62,7 +62,7 @@ public class GlyphRenderer8 {
     }
     int ticks;
     public void tick() {
-        //ticks++;
+        ticks++;
     }
 
     private float clamp(float a, float min, float max){
@@ -74,7 +74,7 @@ public class GlyphRenderer8 {
         return a;
     }
 
-    float zoom = 20;
+    float zoom = 5;
 
     int scale = 1;//number of screen pixels per buffer pixel
 
@@ -85,14 +85,14 @@ public class GlyphRenderer8 {
         height -= height%scale;
 
         BufferedImage image = new BufferedImage(width/scale, height/scale, BufferedImage.TYPE_INT_ARGB);
-        for (int x = 0; x < 300; x++) {
-            for (int y = 0; y < 300; y++) {
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
 
-                //float qx = (float) ((x-.1f*width/scale+Math.cos(ticks*.01f)*25)*zoom);
-                //float qy = (float) ((y-.1f*height/scale+Math.sin(ticks*.01f)*25)*zoom);
+                float qx = (float) ((x-.1f*width/scale+Math.cos(ticks)*25)*zoom);
+                float qy = (float) ((y-.1f*height/scale+Math.sin(ticks)*25)*zoom);
 
-                float qx = (x-0.1f*width)*zoom-ticks*10;
-                float qy = (y-0.1f*height)*zoom-ticks*10;
+                //float qx = (x-0.1f*width)*zoom;
+                //float qy = (y-0.1f*height)*zoom;
 
                 float shade = clamp(area(qx, qy, glyph), 0, 0.99999f);
 
@@ -130,26 +130,19 @@ public class GlyphRenderer8 {
             findRoots(d, e, f-yMin, roots, 4);//bottom
             findRoots(d, e, f-yMax, roots, 6);//top
 
-            //Arrays.sort(roots, (o1, o2) -> Float.compare(o1.t, o2.t));//problem 1
-            sort(roots);
+
+            Arrays.sort(roots, (o1, o2) -> Float.compare(o1.t, o2.t));//problem 1
 
             int squareDepth = (a==0&&b==0&&c>xMin&&c<xMax&&d==0 || d==0&&e==0&&f>yMin&&f<yMax&&a==0)?1:0,
                     aboveDepth = (d>0||d==0&&e<0||d==0&&e==0&&f>=yMax)?1:0;
 
-            float integralComp = 0;
-            for (int i = 0; i < 3; i++) {
-                Intercept t = roots[i*2+1];
-                Intercept t1 = roots[i*2+2];
-                integralComp += (t.type&1) == 0 ? integrate(a, b, d, e, f, yMin, clamp(t.t, 0, 1), clamp(t1.t, 0, 1)) : 0;
-            }
-
-            overlap += squareDepth==0?integralComp:integrate(a, b, d, e, f, yMin, clamp(roots[0].t, 0, 1), clamp(roots[1].t, 0, 1));
-
             for (int i = 0; i < roots.length; i++) {
                 int type = roots[i].type;//problem 2
-                int side = type>>1;
-                int io = (type&1)*2-1;
-                aboveDepth += (side==2)?0:(side==3?io:-io);
+                squareDepth += 1-(type&1)*2;
+                aboveDepth += ((type>>1)==2)?0:(((type>>1)==3)?((type&1)*2-1):(1-(type&1)*2));
+                if(squareDepth==2){
+                    overlap += integrate(a, b, d, e, f, yMin, clamp(roots[i].t, 0, 1), clamp(roots[i+1].t, 0, 1));
+                }
                 if(aboveDepth==2){
                     float t0 = clamp(roots[i].t, 0, 1), t1 = clamp(roots[i+1].t, 0, 1);
                     float dx = a*t1*t1+b*t1-(a*t0*t0+b*t0);
@@ -185,8 +178,8 @@ public class GlyphRenderer8 {
     float[] norms = new float[]{-1, 1, -1, 1};
     //enter, exit
     private void findRoots(float a, float b, float c, Intercept[] t, int i){
-        t[i] = new Intercept(1, i);
-        t[i+1] = new Intercept(1, i+1);
+        t[i] = new Intercept(0, i);
+        t[i+1] = new Intercept(0, i+1);
         if(Math.abs(a)<epsilon&&Math.abs(b)>epsilon){
             float t0 = -c/b;
             int type = 0;
@@ -210,22 +203,6 @@ public class GlyphRenderer8 {
                 t[i] = new Intercept(t0, i);
                 t[i+1] = new Intercept(t1, i+1);
             }
-        }
-    }
-
-    private void sort(Intercept[] ints){
-        for (int i = 0; i < 8; i++) {
-            int minI = i;
-            float minT = ints[i].t;
-            for (int j = i; j < 8; j++) {
-                if(ints[j].t<minT){
-                    minT = ints[j].t;
-                    minI = j;
-                }
-            }
-            Intercept temp = ints[i];
-            ints[i] = ints[minI];
-            ints[minI] = temp;
         }
     }
 

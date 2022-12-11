@@ -1,12 +1,11 @@
 package text_renderer;
 
-import gl.Shader;
 import org.joml.Matrix4f;
 
 import java.awt.*;
 import java.io.IOException;
 
-import static font_test.FileUtil.readFile;
+import static text_renderer.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
@@ -59,7 +58,7 @@ public class TextRenderer {
         int uAtlas = glGetUniformLocation(shader, "uAtlas");
         uPixelSize = glGetUniformLocation(shader, "uFontSize");
         glUniform1i(uAtlas, 0);*/
-        shader = new Shader("/shader/text/text.vert", "/shader/text/text.frag");
+        shader = new Shader("/shader/text.vert", "/shader/text.frag");
         shader.bind();
         shader.setUniform1i("uAtlas", 0);
         shader.setUniform1i("uString", 1);

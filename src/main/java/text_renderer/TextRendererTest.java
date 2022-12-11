@@ -1,25 +1,13 @@
 package text_renderer;
 
-import gl.*;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL30C;
-import org.lwjgl.stb.STBTTFontinfo;
-import org.lwjgl.stb.STBTTVertex;
 
 import java.awt.*;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Vector;
 
-import static font_test.FileUtil.loadFont;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.GL_MAX_FRAGMENT_UNIFORM_BLOCKS;
-import static org.lwjgl.opengl.GL31.GL_MAX_UNIFORM_BLOCK_SIZE;
-import static org.lwjgl.opengl.GL43C.GL_MAX_SHADER_STORAGE_BLOCK_SIZE;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphBox;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
 import static org.lwjgl.system.MemoryUtil.NULL;
