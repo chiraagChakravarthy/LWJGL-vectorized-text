@@ -1,7 +1,9 @@
-package text_renderer;
+package font_test;
 
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import text_renderer.TextRenderer;
+import text_renderer.VectorFont;
 
 import java.awt.*;
 

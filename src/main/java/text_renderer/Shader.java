@@ -11,7 +11,7 @@ import static text_renderer.FileUtil.readFile;
 import static org.lwjgl.opengl.GL20.*;
 
 
-public class Shader {
+class Shader {
     public final int program;
     private final HashMap<String, Integer> uniformLocationCache = new HashMap<>();
     private static final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);

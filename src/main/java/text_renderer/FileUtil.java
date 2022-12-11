@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 
 import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
-public class FileUtil {
+class FileUtil {
     public static STBTTFontinfo loadFont(String font) throws IOException {
         byte[] bytes = readFile(font);
 

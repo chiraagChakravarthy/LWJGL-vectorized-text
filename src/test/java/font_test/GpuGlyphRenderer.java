@@ -6,11 +6,11 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
-import text_renderer.Shader;
+import gl.Shader;
 
 import java.io.IOException;
 
-import static text_renderer.FileUtil.loadFont;
+import static font_test.FileUtil.loadFont;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointBox;
@@ -22,7 +22,7 @@ public class GpuGlyphRenderer {
     private final int HEIGHT = 678;
 
     private long window;
-    private text_renderer.Shader shader;
+    private Shader shader;
     private VertexArray va;
     private IndexBuffer ib;
     private STBTTFontinfo fontinfo;

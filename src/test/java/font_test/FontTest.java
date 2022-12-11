@@ -6,7 +6,7 @@ import org.lwjgl.stb.STBTTVertex;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static text_renderer.FileUtil.loadFont;
+import static font_test.FileUtil.loadFont;
 import static org.lwjgl.stb.STBTruetype.*;
 
 public class FontTest {

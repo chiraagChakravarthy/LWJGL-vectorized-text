@@ -3,7 +3,7 @@ package gl;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import text_renderer.Shader;
+import gl.Shader;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -22,8 +22,8 @@ public class GlTest {
     }
 
     private void run() {
-        text_renderer.Shader pass1S = new text_renderer.Shader("/gl_test/pass1.vert", "/gl_test/pass1.frag");
-        text_renderer.Shader pass2S = new Shader("/gl_test/pass2.vert", "/gl_test/pass2.frag");
+        Shader pass1S = new Shader("/gl_test/pass1.vert", "/gl_test/pass1.frag");
+        Shader pass2S = new Shader("/gl_test/pass2.vert", "/gl_test/pass2.frag");
 
         int fbo = glGenFramebuffers();
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);

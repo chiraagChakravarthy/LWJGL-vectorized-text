@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 
-import static text_renderer.FileUtil.readFile;
+import static font_test.FileUtil.readFile;
 import static org.lwjgl.opengl.GL20.*;
 
 
