@@ -1,13 +1,11 @@
 package text_renderer;
 
-import gl.*;
+import gl.IndexBuffer;
+import gl.Shader;
 import org.joml.Matrix4f;
 import org.lwjgl.stb.STBTTFontinfo;
-import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 import static font_test.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
@@ -21,28 +19,16 @@ import static org.lwjgl.stb.STBTruetype.*;
  *
  */
 public class TextRenderer {
-    private static final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
-    //private static int shader;
-    private static int width, height;
-    private static Renderer renderer;
     static IndexBuffer ib;
     static Shader shader;
 
     public static final int MAX_LEN = 1000;
 
     /**
-     * call after enabling opengl capabilities, before rendering text
+     * call after initializing window, before rendering text
      */
     public static void init(){//inits shaders
         initShaders();
-
-        int[] viewport = new int[2];
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        width = viewport[0];
-        height = viewport[1];
-        setViewport(width, height);
-
-        renderer = new Renderer();
     }
 
     private static void initShaders() {
@@ -56,27 +42,10 @@ public class TextRenderer {
         shader = new Shader("/shader/text/text.vert", "/shader/text/text.frag");
     }
 
-    /**
-     * the dimensions of the output buffer
-     * default is window viewport
-     * if using a custom framebuffer with different dimensions, the output dimensions need to be changed
-     */
-    public static void setViewport(int width, int height){
-        TextRenderer.width = width;
-        TextRenderer.height = height;
-
-        Matrix4f proj = new Matrix4f();
-        proj = proj.ortho(0, width, 0, height, -1.0f, 1.0f);
-        Matrix4f view = new Matrix4f();
-        Matrix4f model = new Matrix4f();
-        Matrix4f mvp = proj.mul(view).mul(model);
-        //glUniformMatrix4fv(uMvp, false, mvp.get(matrixBuffer));
-        shader.setUniformMat4f("u_MVP", mvp);
-    }
-
     public static void drawText(VectorFont font, float x, float y, String text){
         int textVao = genTextVao(font, x, y, text);
         drawText(font, textVao);
+        glDeleteVertexArrays(textVao);
     }
 
     public static void drawText(VectorFont font, int textVao){
@@ -84,8 +53,7 @@ public class TextRenderer {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         shader.setUniform1f("uPixelSize", 1f/font.scale);
-
-        //glUniform1f(uPixelSize, 1f/font.scale);
+        setMvp();
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_BUFFER, font.atlasTexture);
@@ -95,7 +63,19 @@ public class TextRenderer {
         glDrawElements(GL_TRIANGLES, MAX_LEN*6, GL_UNSIGNED_INT, 0);
     }
 
-    public static int genTextVao(VectorFont font, float x, float y, String text){
+    private static void setMvp(){
+        int[] viewport = new int[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        int x = viewport[0];
+        int y = viewport[1];
+        int w = viewport[2];
+        int h = viewport[3];
+
+        Matrix4f mvp = new Matrix4f().ortho(x, x+w, y, y+h, -1, 1);
+        shader.setUniformMat4f("u_MVP", mvp);
+    }
+
+    private static int genTextVao(VectorFont font, float x, float y, String text){
         float scale = font.scale;
         //x, y are in pixels
         //1 glyph unit = 1 pixel * scale

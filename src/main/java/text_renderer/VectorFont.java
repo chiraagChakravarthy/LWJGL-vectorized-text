@@ -17,6 +17,7 @@ import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointShape;
 import static org.lwjgl.stb.STBTruetype.stbtt_ScaleForMappingEmToPixels;
 
 public class VectorFont {
+
     public final float size;
     protected final float scale;
     protected final int atlasTexture;
@@ -26,22 +27,18 @@ public class VectorFont {
      *
      * @param path path to ttf file
      * @param size pixel height of font
-     * @param style bold/italicized
      */
-    public VectorFont(String path, float size, int style) throws IOException, FontFormatException {
+    public VectorFont(String path, float size) {
         this.size = size;
-        this.font = FileUtil.loadFont(path);
+        try {
+            this.font = FileUtil.loadFont(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         this.scale = stbtt_ScaleForMappingEmToPixels(font, size);
         int atlasBuffer = glGenBuffers();
         int[] atlas = genAtlas();
-
-        int start = atlas['a'], end = atlas['b'];
-        for (int i = start; i < end; i++) {
-            int j = i*6+257;
-            System.out.printf("(%dt^2+%dt+%d,%dt^2+%dt+%d)%n", atlas[j], atlas[j+1], atlas[j+2], atlas[j+3], atlas[j+4], atlas[j+5]);
-        }
-
 
         glBindBuffer(GL_ARRAY_BUFFER, atlasBuffer);
         glBufferData(GL_ARRAY_BUFFER, atlas, GL_STATIC_READ);

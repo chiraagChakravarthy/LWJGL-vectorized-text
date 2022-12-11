@@ -21,7 +21,6 @@ public class OpenGL {
         makeWindow();
         vertex();
         setupShaders();
-        setupTextures();
         render();
     }
 
@@ -49,7 +48,7 @@ public class OpenGL {
         glfwSetWindowPos(window, (vidMode.width() - WIDTH) / 2, (vidMode.height() - HEIGHT) / 2);
         //glfwSetKeyCallback(window, new KeyInput()); // will use other key systems
 
-        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(1, 1, 1, 1);
         glfwShowWindow(window);
     }
 
@@ -58,12 +57,10 @@ public class OpenGL {
                 -1, -1, 0, 1,
                 1, -1, 1, 1,
                 1, 1, 1, 0,
-                -1, 1, 0, 0,
         };
 
         int[] indexes = new int[]{
                 0, 1, 2,
-                2, 3, 0
         };
 
         va = new VertexArray();
@@ -79,15 +76,9 @@ public class OpenGL {
         shader = new Shader("/shader/basic.vert", "/shader/basic.frag");
     }
 
-    private void setupTextures() {
-        Texture texture = new Texture("/img/image.png");
-        texture.bind(0);
-        shader.setUniform1i("u_Texture", 0);
-    }
-
     private void render() {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-        glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
+        //glDisable(GL_BLEND);
 
         Renderer renderer = new Renderer();
 

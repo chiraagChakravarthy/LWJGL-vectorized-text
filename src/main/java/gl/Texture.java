@@ -62,7 +62,7 @@ public class Texture {
 
     public BufferedImage readImage(String path) {
         try {
-            BufferedImage image = ImageIO.read(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(path)));
+            BufferedImage image = ImageIO.read(Objects.requireNonNull(getClass().getResourceAsStream(path)));
             BufferedImage formatted = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
             formatted.getGraphics().drawImage(image, 0, 0, null);
             return formatted;

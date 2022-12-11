@@ -4,17 +4,19 @@ import gl.*;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL30C;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Vector;
 
 import static font_test.FileUtil.loadFont;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL30.glGetIntegeri;
+import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL31.GL_MAX_FRAGMENT_UNIFORM_BLOCKS;
 import static org.lwjgl.opengl.GL31.GL_MAX_UNIFORM_BLOCK_SIZE;
 import static org.lwjgl.opengl.GL43C.GL_MAX_SHADER_STORAGE_BLOCK_SIZE;
@@ -29,13 +31,18 @@ public class TextRendererTest {
 
     public void run() {
         makeWindow();
-
-        int[] out = new int[1];
-        glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS, out);
-        System.out.println(out[0]);
+        int type = glGetFramebufferAttachmentParameteri(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
+        System.out.println(type==GL_NONE);
+        System.out.println(type==GL_FRAMEBUFFER_DEFAULT);
+        System.out.println(type==GL_TEXTURE);
+        System.out.println(type==GL_RENDERBUFFER);
+        type = glGetFramebufferAttachmentParameteri(GL_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
+        System.out.println(type==GL_NONE);
+        System.out.println(type==GL_FRAMEBUFFER_DEFAULT);
+        System.out.println(type==GL_TEXTURE);
+        System.out.println(type==GL_RENDERBUFFER);
 
         TextRenderer.init();
-        TextRenderer.setViewport(WIDTH, HEIGHT);
         render();
     }
 
@@ -64,25 +71,21 @@ public class TextRendererTest {
         glfwSetWindowPos(window, (vidMode.width() - WIDTH) / 2, (vidMode.height() - HEIGHT) / 2);
         //glfwSetKeyCallback(window, new KeyInput()); // will use other key systems
 
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(1, 1, 1, 1.0f);
         glfwShowWindow(window);
     }
 
     private void render() {
-        VectorFont font;
-        try {
-            font = new VectorFont("/font/arial.ttf", 100, 0);
-        } catch (IOException | FontFormatException e) {
-            throw new RuntimeException(e);
-        }
+        VectorFont font = new VectorFont("/font/arial.ttf", 100);
+        float off = 0;
 
-        int text = TextRenderer.genTextVao(font, 100, 100, "faggot");
         do {
-            fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            TextRenderer.drawText(font, text);
+            fps();
+            TextRenderer.drawText(font, 100, 100+off, "Hello");
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
+
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
         glfwTerminate();
     }

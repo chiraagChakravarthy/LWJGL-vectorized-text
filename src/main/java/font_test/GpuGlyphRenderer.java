@@ -12,8 +12,7 @@ import java.io.IOException;
 import static font_test.FileUtil.loadFont;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphBox;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
+import static org.lwjgl.stb.STBTruetype.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GpuGlyphRenderer {
@@ -29,7 +28,7 @@ public class GpuGlyphRenderer {
     private float[] atlas;//beziers coefficients
     private float x0, y0, x1, y1;//bounds of glyph in glyph space
     private int count;//number of beziers in the glyph
-    private float pixelSize = 2;//how many glyph space units per screen pixel
+    private float pixelSize = 1;//how many glyph space units per screen pixel
     private float gx=101f, gy=101f;//pixel space coordinates of the origin of the glyph
 
     public void run() {
@@ -44,7 +43,7 @@ public class GpuGlyphRenderer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        initGlyph(68);
+        initGlyph('/');
 
         vertex();
         setupShaders();
@@ -81,12 +80,12 @@ public class GpuGlyphRenderer {
 
     void initGlyph(int glyph) {
         int[] x0 = new int[1], x1 = new int[1], y0 = new int[1], y1 = new int[1];
-        stbtt_GetGlyphBox(fontinfo, glyph, x0, y0, x1, y1);
+        stbtt_GetCodepointBox(fontinfo, glyph, x0, y0, x1, y1);
         this.x0 = x0[0];
         this.x1 = x1[0];
         this.y0 = y0[0];
         this.y1 = y1[0];
-        STBTTVertex.Buffer vertices = stbtt_GetGlyphShape(fontinfo, glyph);
+        STBTTVertex.Buffer vertices = stbtt_GetCodepointShape(fontinfo, glyph);
         if(vertices!=null){
             float[] atlas = this.atlas = new float[400];
             count = vertices.remaining();
@@ -97,13 +96,15 @@ public class GpuGlyphRenderer {
                 int ax = vertex.x(), ay = vertex.y();
                 byte type = vertex.type();
 
+                float w = 0.01f;
+
                 if(type==3){
                     int bx = vertex.cx(), by = vertex.cy();
                     STBTTVertex nextVertex = vertices.get(i-1);
                     int cx = nextVertex.x(), cy = nextVertex.y();
-                    atlas[j] = ax-2*bx+cx;
-                    atlas[j+1] = 2*bx-2*cx;
-                    atlas[j+2] = cx;
+                    atlas[j] = (ax-2*bx+cx)*w;
+                    atlas[j+1] = (2*bx-2*cx)*w;
+                    atlas[j+2] = cx*w;
                     atlas[j+3] = ay-2*by+cy;
                     atlas[j+4] = 2*by-2*cy;
                     atlas[j+5] = cy;
@@ -111,8 +112,8 @@ public class GpuGlyphRenderer {
                     STBTTVertex nextVertex = vertices.get(i-1);
                     int bx = nextVertex.x(), by = nextVertex.y();
                     atlas[j] = 0;
-                    atlas[j+1] = ax-bx;
-                    atlas[j+2] = bx;
+                    atlas[j+1] = (ax-bx)*w;
+                    atlas[j+2] = bx*w;
                     atlas[j+3] = 0;
                     atlas[j+4] = ay-by;
                     atlas[j+5] = by;
@@ -136,10 +137,10 @@ public class GpuGlyphRenderer {
                 gx1 = gx+this.x1/ pixelSize,
                 gy1 = gy+this.y1/ pixelSize;
 
-        float pad = 2;
+        float pad = 1;
 
-        float agx0 = (float) (Math.floor(gx0)-pad), agy0 = (float) (Math.floor(gy0)-pad),
-                agx1 = (float) (Math.ceil(gx1)+pad), agy1 = (float) (Math.ceil(gy1)+pad);
+        float agx0 = (float) (gx0-pad), agy0 = (float) (gy0-pad),
+                agx1 = (float) ((gx1)+pad), agy1 = (float) ((gy1)+pad);
 
         float dx0 = (gx0-agx0)*pixelSize, dx1 = (agx1-gx1)*pixelSize,
                 dy0 = (gy0 - agy0)*pixelSize, dy1 = (agy1-gy1)*pixelSize;
@@ -171,6 +172,7 @@ public class GpuGlyphRenderer {
 
     private void render() {
         glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         Renderer renderer = new Renderer();
 

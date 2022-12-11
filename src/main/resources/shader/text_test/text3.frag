@@ -63,8 +63,8 @@ float rectIntegrate(float a, float b, float t0, float t1){
 }
 
 float calcArea(){
-    vec2 maxPos = pos + vec2(uPixelSize)*(0.5+scale/2);
-    vec2 minPos = pos + vec2(uPixelSize)*(0.5-scale/2);
+    vec2 maxPos = vec2(pos.x*.0001, pos.y) + vec2(uPixelSize)*(0.5+scale/2);
+    vec2 minPos = vec2(pos.x*.0001, pos.y) + vec2(uPixelSize)*(0.5-scale/2);
     float overlap = 0;
 
     //iterate through beziers
@@ -239,6 +239,10 @@ float calcArea(){
     return overlap;
 }
 
+float rgb2srgb(float rgb){
+    return mix(rgb*12.92, 1.055*pow(rgb, 1/2.4)-0.055, rgb>0.0031308);
+}
+
 void main () {
     float area = calcArea();
     if (area == -1) {
@@ -247,7 +251,8 @@ void main () {
         area = area / uPixelSize / uPixelSize / scale / scale;
         area = clamp(area, 0.0, 1.0);
         float shade = 1 - area;
-        shade = pow(shade, 1.0 / 2.2);
-        color = vec4(vec3(shade), 1);
+        //shade = rgb2srgb(shade);
+       // shade = pow(shade, 1/2.2);
+        color = vec4(vec3(0), 1-shade);
     }
 }
