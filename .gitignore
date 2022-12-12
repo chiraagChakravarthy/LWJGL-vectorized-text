@@ -6,3 +6,4 @@ gradle/
 gradlew
 gradlew.bat
 *.log
+/tocompile

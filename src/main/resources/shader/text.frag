@@ -250,7 +250,7 @@ void main () {
     float area = calcArea();
     area = area / uPixelSize / uPixelSize / window / window;
     area = clamp(area, 0.0, 1.0);
-    float shade = area;
-    //shade = pow(shade, 1);
-    color = vec4(u_tint.rgb, shade*u_tint.a);
+    float shade = 1-area;
+    shade = pow(shade, 1/2.2);
+    color = vec4(u_tint.rgb, (1-shade)*u_tint.a);
 }

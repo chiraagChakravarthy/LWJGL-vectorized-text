@@ -1,5 +1,3 @@
-package font_test;
-
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import text_renderer.TextRenderer;
@@ -10,8 +8,6 @@ import java.awt.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphBox;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetGlyphShape;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class TextRendererTest {
@@ -61,21 +57,21 @@ public class TextRendererTest {
         glfwSetWindowPos(window, (vidMode.width() - WIDTH) / 2, (vidMode.height() - HEIGHT) / 2);
         //glfwSetKeyCallback(window, new KeyInput()); // will use other key systems
 
-        glClearColor(1, 1, 1, 1.0f);
+        glClearColor(0, 0, 0, 1.0f);
         glfwShowWindow(window);
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/arial.ttf", 100);
+        VectorFont font = new VectorFont("/font/arial.ttf", 300);
         float off = 0;
 
         do {
             glClear(GL_COLOR_BUFFER_BIT);
             fps();
-            TextRenderer.drawText("Hello", 100, 100+off, font, Color.BLACK);
+            TextRenderer.drawText("Hello", 100, 100+off, font, Color.WHITE);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
-
+            //off += .1f;
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
         glfwTerminate();
     }

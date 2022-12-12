@@ -1,16 +1,18 @@
 package text_renderer;
 
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.system.MemoryUtil;
 
 import java.awt.*;
 import java.io.IOException;
+import java.nio.FloatBuffer;
 
+import static org.lwjgl.opengl.GL31.*;
 import static text_renderer.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.GL_TEXTURE_BUFFER;
-import static org.lwjgl.opengl.GL31.glTexBuffer;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointHMetrics;
 import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointKernAdvance;
 
@@ -19,20 +21,22 @@ import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointKernAdvance;
  *
  */
 public class TextRenderer {
-    static Shader shader;
-    static int textVao;
-
-    static int stringBuffer, stringBufferTex;
-
     public static final int MAX_LEN = 1000;
+    private static int shader, uAtlas, uString, uPixelSize, u_MVP, uTextPos, uTint;
+    private static int textVao;
+    private static int stringBuffer, stringBufferTex;
+    private static boolean initialized = false;
+
+    private static final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
 
     /**
-     * call after initializing window, before rendering text
+     * call after creating opengl capabilities
      */
-    public static void init(){//inits shaders
+    public static void init(){
         initShaders();
         initVao();
         initStringBuffer();
+        initialized = true;
     }
 
     private static void initStringBuffer(){
@@ -51,18 +55,24 @@ public class TextRenderer {
     }
 
     private static void initShaders() {
-        /*String vsCode = readShader("/shader/text/text.vert"),
-                fsCode = readShader("/shader/text/text.frag");
-        shader = createShader(vsCode, fsCode);
-        uMvp = glGetUniformLocation(shader, "u_MVP");
-        int uAtlas = glGetUniformLocation(shader, "uAtlas");
-        uPixelSize = glGetUniformLocation(shader, "uFontSize");
-        glUniform1i(uAtlas, 0);*/
-        shader = new Shader("/shader/text.vert", "/shader/text.frag");
-        shader.bind();
-        shader.setUniform1i("uAtlas", 0);
-        shader.setUniform1i("uString", 1);
-        shader.unbind();
+        shader = createShader("/shader/text.vert", "/shader/text.frag");
+
+        uAtlas = glGetUniformLocation(shader, "uAtlas");
+        uString = glGetUniformLocation(shader, "uString");
+
+        uPixelSize = glGetUniformLocation(shader, "uPixelSize");
+        u_MVP = glGetUniformLocation(shader, "u_MVP");
+        uTextPos = glGetUniformLocation(shader, "uTextPos");
+        uTint = glGetUniformLocation(shader, "u_tint");
+
+        glUseProgram(shader);
+        glUniform1i(uAtlas, 0);
+        glUniform1i(uString, 1);
+        glUseProgram(0);
+        /*shader2.bind();
+        shader2.setUniform1i("uAtlas", 0);
+        shader2.setUniform1i("uString", 1);
+        shader2.unbind();*/
     }
 
     private static void initVao(){
@@ -117,7 +127,18 @@ public class TextRenderer {
         TextRenderer.textVao = vao;
     }
 
+    /**
+     *
+     * @param text string what drawn
+     * @param x window pixel x
+     * @param y window pixel y
+     * @param font the font and scale
+     * @param color color (bruh)
+     */
     public static void drawText(String text, float x, float y, VectorFont font, Color color){
+        if(!initialized){
+            throw new RuntimeException("Text renderer not initialized");
+        }
         int len = Math.min(text.length(), MAX_LEN);
 
         uploadString(text, len, font);
@@ -125,8 +146,8 @@ public class TextRenderer {
         drawText(font, x, y, len, color);
     }
 
-    public static void drawText(VectorFont font, float x, float y, int len, Color color){
-        shader.bind();
+    private static void drawText(VectorFont font, float x, float y, int len, Color color){
+        glUseProgram(shader);
         setUniforms(color, font, x, y);
 
         glEnable(GL_BLEND);
@@ -151,15 +172,23 @@ public class TextRenderer {
         int vh = viewport[3];
 
         Matrix4f mvp = new Matrix4f().ortho(vx, vx+vw, vy, vy+vh, -1, 1);
-        shader.setUniformMat4f("u_MVP", mvp);
-
-        shader.setUniform4f("u_tint",
+        glUniformMatrix4fv(u_MVP, false, mvp.get(matrixBuffer));
+        glUniform4f(uTint,
                 color.getRed()/256f,
                 color.getGreen()/256f,
                 color.getBlue()/256f,
                 color.getAlpha()/256f);
-        shader.setUniform1f("uPixelSize", 1f/font.scale);
-        shader.setUniform2f("uTextPos", x, y);
+        glUniform1f(uPixelSize, 1f/font.scale);
+        glUniform2f(uTextPos, x, y);
+
+        /*shader2.setUniformMat4f("u_MVP", mvp);
+        shader2.setUniform4f("u_tint",
+                color.getRed()/256f,
+                color.getGreen()/256f,
+                color.getBlue()/256f,
+                color.getAlpha()/256f);
+        shader2.setUniform1f("uPixelSize", 1f/font.scale);
+        shader2.setUniform2f("uTextPos", x, y);*/
     }
 
     private static void uploadString(String text, int len, VectorFont font){
@@ -205,8 +234,11 @@ public class TextRenderer {
         return data;
     }
 
-    private static int createShader(String vsCode, String fsCode) {
+    private static int createShader(String vsPath, String fsPath) {
         int program = glCreateProgram();
+
+        String vsCode = readShader(vsPath);
+        String fsCode = readShader(fsPath);
 
         int vs = compileShader(GL_VERTEX_SHADER, vsCode);
         int fs = compileShader(GL_FRAGMENT_SHADER, fsCode);
