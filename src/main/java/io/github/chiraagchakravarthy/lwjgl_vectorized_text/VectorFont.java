@@ -1,4 +1,4 @@
-package text_renderer;
+package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
 
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
@@ -14,11 +14,11 @@ import static org.lwjgl.opengl.GL31.glTexBuffer;
 import static org.lwjgl.stb.STBTruetype.*;
 
 public class VectorFont {
-
     public final float size;
     protected final float scale;
     protected final int atlasTexture;
     protected final STBTTFontinfo font;
+    protected final int[] advance, kern;
 
     /**
      *
@@ -27,6 +27,8 @@ public class VectorFont {
      */
     public VectorFont(String path, float size) {
         this.size = size;
+        advance = new int[256];
+        kern = new int[256*256];
         try {
             this.font = FileUtil.loadFont(path);
         } catch (IOException e) {
@@ -43,6 +45,8 @@ public class VectorFont {
         atlasTexture = glGenTextures();
         glBindTexture(GL_TEXTURE_BUFFER, atlasTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
+
+        makeTables();
     }
 
 
@@ -89,6 +93,18 @@ public class VectorFont {
         return atlas;
     }
 
+    private void makeTables(){
+        for (int i = 0; i < 256; i++) {
+            for (int j = 0; j < 256; j++) {
+                //char1 * 256 + char2
+                kern[i*256+j] = stbtt_GetCodepointKernAdvance(font, i, j);
+            }
+            int[] leftBearing = new int[1], advance = new int[1];
+            stbtt_GetCodepointHMetrics(font, i, advance, leftBearing);
+            this.advance[i] = advance[0];
+        }
+    }
+
     private void addBounds(int[] atlas, int i) {
         int[] x0a = new int[1], x1a = new int[1], y0a = new int[1], y1a = new int[1];
         stbtt_GetCodepointBox(font, i, x0a, y0a, x1a, y1a);
@@ -129,9 +145,5 @@ public class VectorFont {
             }
         }
         return k/6;
-    }
-
-    public float getSize() {
-        return size;
     }
 }

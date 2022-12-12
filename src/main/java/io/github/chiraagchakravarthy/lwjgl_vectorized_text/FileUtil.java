@@ -1,4 +1,4 @@
-package text_renderer;
+package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBTTFontinfo;

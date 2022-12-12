@@ -1,7 +1,7 @@
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import text_renderer.TextRenderer;
-import text_renderer.VectorFont;
+import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
+import io.github.chiraagchakravarthy.lwjgl_vectorized_text.VectorFont;
 
 import java.awt.*;
 
@@ -62,13 +62,15 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/arial.ttf", 300);
+        VectorFont font = new VectorFont("/font/arial.ttf", 30);
         float off = 0;
 
         do {
             glClear(GL_COLOR_BUFFER_BIT);
             fps();
-            TextRenderer.drawText("Hello", 100, 100+off, font, Color.WHITE);
+            for (int i = 0; i < 30; i++) {
+                TextRenderer.drawText(String.valueOf(Math.random()), 100, 100+off, font, Color.WHITE);
+            }
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
             //off += .1f;

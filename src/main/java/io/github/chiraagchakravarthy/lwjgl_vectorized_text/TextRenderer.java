@@ -1,20 +1,15 @@
-package text_renderer;
+package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
 
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryUtil;
 
 import java.awt.*;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 
-import static org.lwjgl.opengl.GL31.*;
-import static text_renderer.FileUtil.readFile;
+import static io.github.chiraagchakravarthy.lwjgl_vectorized_text.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointHMetrics;
-import static org.lwjgl.stb.STBTruetype.stbtt_GetCodepointKernAdvance;
+import static org.lwjgl.opengl.GL31.*;
 
 /**
  * renders vectorized text
@@ -137,7 +132,7 @@ public class TextRenderer {
      */
     public static void drawText(String text, float x, float y, VectorFont font, Color color){
         if(!initialized){
-            throw new RuntimeException("Text renderer not initialized");
+            throw new RuntimeException("Text renderer is not initialized");
         }
         int len = Math.min(text.length(), MAX_LEN);
 
@@ -145,6 +140,12 @@ public class TextRenderer {
 
         drawText(font, x, y, len, color);
     }
+    /*
+    canonical bounds
+    bezier sdf
+    kerning table
+    advance
+     */
 
     private static void drawText(VectorFont font, float x, float y, int len, Color color){
         glUseProgram(shader);
@@ -180,15 +181,6 @@ public class TextRenderer {
                 color.getAlpha()/256f);
         glUniform1f(uPixelSize, 1f/font.scale);
         glUniform2f(uTextPos, x, y);
-
-        /*shader2.setUniformMat4f("u_MVP", mvp);
-        shader2.setUniform4f("u_tint",
-                color.getRed()/256f,
-                color.getGreen()/256f,
-                color.getBlue()/256f,
-                color.getAlpha()/256f);
-        shader2.setUniform1f("uPixelSize", 1f/font.scale);
-        shader2.setUniform2f("uTextPos", x, y);*/
     }
 
     private static void uploadString(String text, int len, VectorFont font){
@@ -203,13 +195,9 @@ public class TextRenderer {
 
         int advance = 0;
         for (int i = 1; i < len; i++) {
-            int[] charWidth = new int[1], leftBearing = new int[1];
-            stbtt_GetCodepointHMetrics(font.font, prevCodepoint, charWidth, leftBearing);
-            advance += charWidth[0];
-
             int codepoint = codepoints[i];
-            int kern = stbtt_GetCodepointKernAdvance(font.font, prevCodepoint, codepoint);
-            advance += kern;
+            advance += font.advance[prevCodepoint];
+            advance += font.kern[prevCodepoint*256+codepoint];
 
             data[i*2] = codepoint;
             data[i*2+1] = advance;
