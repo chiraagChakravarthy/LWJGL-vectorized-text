@@ -57,23 +57,22 @@ public class TextRendererTest {
         glfwSetWindowPos(window, (vidMode.width() - WIDTH) / 2, (vidMode.height() - HEIGHT) / 2);
         //glfwSetKeyCallback(window, new KeyInput()); // will use other key systems
 
-        glClearColor(0, 0, 0, 1.0f);
+        glClearColor(1,1,1, 1.0f);
         glfwShowWindow(window);
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/arial.ttf", 30);
+        VectorFont font = new VectorFont("/font/arial.ttf", 5);
         float off = 0;
 
         do {
             glClear(GL_COLOR_BUFFER_BIT);
             fps();
-            for (int i = 0; i < 30; i++) {
-                TextRenderer.drawText(String.valueOf(Math.random()), 100, 100+off, font, Color.WHITE);
+            for (int i = 0; i < 1; i++) {
+                TextRenderer.drawText("Hello", 100, 100+off, font, Color.BLACK);
             }
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
-            //off += .1f;
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
         glfwTerminate();
     }

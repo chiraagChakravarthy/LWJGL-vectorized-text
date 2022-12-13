@@ -47,9 +47,32 @@ dependencies {
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
-			groupId = 'io.github.chiraagchakravarthy.lwjgl-vectorized-text'
-			artifactId = 'lwjgl-vectorized-text'
-			version = "0.0.1"
+			pom {
+				groupId = 'io.github.chiraagchakravarthy'
+				artifactId = 'lwjgl-vectorized-text'
+				version = "0.0.1"
+				name = "LWJGL Vectorized Text Renderer"
+				description = "Renders vectorized text at arbitrary resolution with font from a ttf file"
+				url = "https://github.com/chiraagChakravarthy/LWJGL-vectorized-text"
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						name = 'Chiraag Chakravarthy'
+						email = 'chakrc@rpi.edu'
+						organizationUrl = 'https://github.com/chiraagChakravarthy'
+					}
+				}
+				scm {
+					connection = "scm:git:git://github.com/chiraagChakravarthy/LWJGL-vectorized-text.git"
+					developerConnection = "scm:git:ssh://github.com:chiraagChakravarthy/LWJGL-vectorized-text.git"
+					url = "http://github.com/chiraagChakravarthy/LWJGL-vectorized-text/tree/master"
+				}
+			}
 			from components.java
 		}
 	}
@@ -60,4 +83,9 @@ publishing {
 
 signing {
 	sign publishing.publications.mavenJava
+}
+
+java {
+	withSourcesJar()
+	withJavadocJar()
 }
