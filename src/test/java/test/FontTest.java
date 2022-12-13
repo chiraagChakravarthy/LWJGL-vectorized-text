@@ -27,6 +27,8 @@ public class FontTest {
         int y0 = y0a[0];
         int y1 = y1a[0];
 
+        System.out.println("scale: " + stbtt_ScaleForMappingEmToPixels(info, 1));
+
 
         System.out.printf("(%d+%dt,%d)%n", x0, x1-x0, y0);
         System.out.printf("(%d,%d+%dt)%n", x1, y0, y1-y0);

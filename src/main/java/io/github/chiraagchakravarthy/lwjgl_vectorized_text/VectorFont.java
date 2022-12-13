@@ -14,8 +14,13 @@ import static org.lwjgl.opengl.GL31.glTexBuffer;
 import static org.lwjgl.stb.STBTruetype.*;
 
 public class VectorFont {
-    public final float size;
-    protected final float scale;
+
+    /** em per glyph unit
+     * 10px scale means 10 pixels/em
+     * thus pixelScale = #px * emScale
+     */
+    protected final float emScale;
+
     protected final int atlasTexture;
     protected final STBTTFontinfo font;
     protected final int[] advance, kern;
@@ -23,19 +28,18 @@ public class VectorFont {
     /**
      *
      * @param path path to ttf file
-     * @param size pixel height of font
      */
-    public VectorFont(String path, float size) {
-        this.size = size;
+    public VectorFont(String path) {
         advance = new int[256];
         kern = new int[256*256];
         try {
             this.font = FileUtil.loadFont(path);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Could not find font at \"" + path + "\"");
         }
 
-        this.scale = stbtt_ScaleForMappingEmToPixels(font, size);
+        emScale = stbtt_ScaleForMappingEmToPixels(font, 1);
+
         int atlasBuffer = glGenBuffers();
         int[] atlas = genAtlas();
 
@@ -52,10 +56,9 @@ public class VectorFont {
 
     /**
      * uses arial by default
-     * @param size pixel height of the font
      */
-    public VectorFont(float size){
-        this("/font/arial.ttf", size);
+    public VectorFont(){
+        this("/font/arial.ttf");
     }
 
     private int[] genAtlas(){

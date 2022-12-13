@@ -52,7 +52,7 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/ariblk.ttf", 10);
+        VectorFont font = new VectorFont("/font/ariblk.ttf");
         StringBuilder str = new StringBuilder();
         for (int i = 0; i < 155; i++) {
             str.append((char) i);
@@ -62,7 +62,7 @@ public class TextRendererTest {
         do {
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            TextRenderer.drawText(s, 100, 100, font, Color.BLACK);
+            TextRenderer.drawText(s, 100, 100, font, 10);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

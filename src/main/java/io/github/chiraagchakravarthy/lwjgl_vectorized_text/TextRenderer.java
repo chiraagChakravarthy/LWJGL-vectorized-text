@@ -3,10 +3,8 @@ package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryUtil;
 
-import java.awt.*;
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 import static io.github.chiraagchakravarthy.lwjgl_vectorized_text.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
@@ -27,6 +25,7 @@ public class TextRenderer {
 
     /**
      * call after creating opengl capabilities
+     * loads shaders, initializes buffers and vertex array
      */
     public static void init(){
         initShaders();
@@ -64,6 +63,7 @@ public class TextRenderer {
         glUseProgram(shader);
         glUniform1i(uAtlas, 0);
         glUniform1i(uString, 1);
+        glUniform4f(uTint, 0, 0, 0, 1);
         glUseProgram(0);
         /*shader2.bind();
         shader2.setUniform1i("uAtlas", 0);
@@ -123,15 +123,26 @@ public class TextRenderer {
         TextRenderer.textVao = vao;
     }
 
-    /**
+    /** Sets the rgba fill color of the drawn text (default is opaque black)
+     *
+     * @param r red
+     * @param g green
+     * @param b blue
+     * @param a alpha
+     */
+    public static void fillColor(float r, float g, float b, float a){
+        glUniform4f(uTint, r, g, b, a);
+    }
+
+    /** Draw some text!
      *
      * @param text string what drawn
      * @param x window pixel x
      * @param y window pixel y
-     * @param font the font and scale
-     * @param color color
+     * @param font the typeface
+     * @param px the pixel scale of the text
      */
-    public static void drawText(String text, float x, float y, VectorFont font, Color color){
+    public static void drawText(String text, float x, float y, VectorFont font, float px){
         if(!initialized){
             throw new RuntimeException("Text renderer is not initialized");
         }
@@ -139,18 +150,12 @@ public class TextRenderer {
 
         uploadString(text, len, font);
 
-        drawText(font, x, y, len, color);
+        drawText(font, x, y, px, len);
     }
-    /*
-    canonical bounds
-    bezier sdf
-    kerning table
-    advance
-     */
 
-    private static void drawText(VectorFont font, float x, float y, int len, Color color){
+    private static void drawText(VectorFont font, float x, float y, float px, int len){
         glUseProgram(shader);
-        setUniforms(color, font, x, y);
+        setUniforms(px, font, x, y);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -165,7 +170,7 @@ public class TextRenderer {
         glDrawElements(GL_TRIANGLES, len*6, GL_UNSIGNED_INT, 0);
     }
 
-    private static void setUniforms(Color color, VectorFont font, float x, float y){
+    private static void setUniforms(float px, VectorFont font, float x, float y){
         int[] viewport = new int[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
         int vx = viewport[0];
@@ -175,12 +180,7 @@ public class TextRenderer {
 
         Matrix4f mvp = new Matrix4f().ortho(vx, vx+vw, vy, vy+vh, -1, 1);
         glUniformMatrix4fv(u_MVP, false, mvp.get(matrixBuffer));
-        glUniform4f(uTint,
-                color.getRed()/256f,
-                color.getGreen()/256f,
-                color.getBlue()/256f,
-                color.getAlpha()/256f);
-        glUniform1f(uPixelSize, 1f/font.scale);
+        glUniform1f(uPixelSize, 1f/(font.emScale*px));
         glUniform2f(uTextPos, x, y);
     }
 
