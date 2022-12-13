@@ -90,6 +90,13 @@ public class VectorFont {
             }
         }
 
+        /*int start = atlas[')'], end = atlas[')'+1];
+        for (int i = start; i < end; i++) {
+            int j = i*6+256*4+257;
+            System.out.printf("(%dt^2+%dt+%d,%dt^2+%dt+%d)%n", atlas[j], atlas[j+1], atlas[j+2], atlas[j+3], atlas[j+4], atlas[j+5]);
+        }
+        System.out.printf("(%dt+%d, %dt+%d)%n", atlas[257+4*')'], atlas[257+4*')'+2]-atlas[257+4*')'], atlas[257+4*')'+1], atlas[257+4*')'+3]-atlas[257+4*')'+1]);
+        */
         return atlas;
     }
 

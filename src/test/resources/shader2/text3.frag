@@ -2,18 +2,16 @@
 layout (location=0) out vec4 color;
 
 #define epsilon 0.0001
-#define window 1.0
+#define scale 1.0
 //scaling factor of intersect window for pixel
 
+uniform float[400] uAtlas;//at^2+bt+c
+uniform int uCount;//how many bezier curves form this glyph
 uniform float uPixelSize;
-uniform isamplerBuffer uAtlas;
-uniform vec4 u_tint;
-
 //size of pixel in glyph space
 //depending on program to provide this info
 
-in vec2 vGlyphPos;//position in glyph space
-in float vGlyph;//which glyph to render
+in vec2 pos;//position in glyph space
 
 vec2 findRoots(float a, float b, float c, int s){
     vec2 roots = vec2(1);
@@ -58,26 +56,21 @@ float integrate(float a, float b, float d, float e, float f, float t0, float t1)
     return upper-lower;
 }
 
-float rectArea(float a, float b, float t0, float t1){
+float rectIntegrate(float a, float b, float t0, float t1){
     t0 = clamp(t0, 0.0, 1.0);
     t1 = clamp(t1, 0.0, 1.0);
-    return (a*t1*t1+b*t1-a*t0*t0-b*t0)* uPixelSize * window;
+    return (a*t1*t1+b*t1-a*t0*t0-b*t0)* uPixelSize *scale;
 }
 
 float calcArea(){
-    vec2 maxPos = vGlyphPos + vec2(uPixelSize)*(0.5+ window /2);
-    vec2 minPos = vGlyphPos + vec2(uPixelSize)*(0.5- window /2);
+    vec2 maxPos = pos + vec2(uPixelSize)*(0.5+scale/2);
+    vec2 minPos = pos + vec2(uPixelSize)*(0.5-scale/2);
     float overlap = 0;
 
-    int iGlyph = int(vGlyph);
-
     //iterate through beziers
-    int start = texelFetch(uAtlas, iGlyph).x, end = texelFetch(uAtlas, iGlyph+1).x;
-
-    for (int i = start; i < end; i++) {
-        int j = i*6+257+256*4;
-        float a = texelFetch(uAtlas, j).x, b = texelFetch(uAtlas, j+1).x, c = texelFetch(uAtlas, j+2).x,
-                d = texelFetch(uAtlas, j+3).x, e = texelFetch(uAtlas, j+4).x, f = texelFetch(uAtlas, j+5).x;
+    for (int i = 0; i < uCount; i++) {
+        float a = uAtlas[i*6], b = uAtlas[i*6+1], c = uAtlas[i*6+2],
+        d = uAtlas[i*6+3], e = uAtlas[i*6+4], f = uAtlas[i*6+5];
 
         vec2 roots1 = findRoots(a, b, c - minPos.x, 0);//left
         vec2 roots2 = findRoots(a, b, c - maxPos.x, 1);//right
@@ -85,36 +78,36 @@ float calcArea(){
         vec2 roots4 = findRoots(d, e, f - maxPos.y, 3);//top
 
 
+        //SORT
+    /*for retards
+    [a b c d e f g h]
 
-        /*SORT
-        [a b c d e f g h]
+    LAYER 1
+    if e>a: swap
+    if f>b: swap
+    if g>c: swap
+    if h>d: swap
 
-        LAYER 1
-        if e>a: swap
-        if f>b: swap
-        if g>c: swap
-        if h>d: swap
+    layer 1: [[0,4], [1,5], [2,6], [3,7]]
+    layer 2: [[0,2], [1,3], [4,6], [5,7]]
+    layer 3: [[2,4], [3,5], [0,1], [6,7]]
+    layer 4: [[2,3], [4,5]]
+    layer 5: [[1,4], [3,6]]
+    layer 6: [[1,2], [3,4], [5,6]]
+    */
 
-        layer 1: [[0,4], [1,5], [2,6], [3,7]]
-        layer 2: [[0,2], [1,3], [4,6], [5,7]]
-        layer 3: [[2,4], [3,5], [0,1], [6,7]]
-        layer 4: [[2,3], [4,5]]
-        layer 5: [[1,4], [3,6]]
-        layer 6: [[1,2], [3,4], [5,6]]
-        */
-
-        //min([0 4 5 2], [1 3 6 7]) = [0 3 5 2]
-        //max([0 4 5 2], [1 3 6 7]) = [1 4 6 7]
-
-        //greaterThan([0 4 5 2], [1 3 6 7]) = [0>1, 4>3, 5>6, 2>7] = [false, true, true, false] = [0 1 1 0]
-        //mix(a, b, t/f): selection function (false selects a, true selects b)
-
-        //LAYER 1
+//LAYER 1
         vec4 va = vec4(roots1, roots2);//0123
         vec4 vb = vec4(roots3, roots4);//4567
         bvec4 ineq = greaterThan(va, vb);
         vec4 ta = mix(va, vb, ineq);
         vec4 tb = mix(vb, va, ineq);
+
+        //min([0 4 5 2], [1 3 6 7]) = [0 3 5 2]
+        //max([0 4 5 2], [1 3 6 7]) = [1 4 6 7]
+
+        //greaterThan([0 4 5 2], [1 3 6 7]) = [0>1, 4>3, 5>6, 2>7] = [false, true, true, false] = [0 1 1 0]
+        //mix(a, b, 0/1): selection function (0 selects a, 1 selects b)
 
         //LAYER 2
         va = vec4(ta.xy, tb.xy);//0145
@@ -168,7 +161,7 @@ float calcArea(){
         int squareDepth = int(mix(0.0, 1.0, a==0&&d==0&&( b==0&&c>minPos.x&&c<maxPos.x || e==0&&f>minPos.y&&f<maxPos.y)));
         int aboveDepth = int(mix(0.0, 1.0, d>0||d==0&&(e<0||e==0&&f>=maxPos.y)));
 
-        float intComp = 0;//integral component
+        float intComp = 0;
 
         float t0, t1, dx;
         int io0, s0;
@@ -178,7 +171,7 @@ float calcArea(){
         //t0-t1 above
         t0 = va.x;
         t1 = va.y;
-        dx = rectArea(a, b, t0, t1);
+        dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.x;
         s0 = sa.x;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -187,7 +180,7 @@ float calcArea(){
         //t1-t2 above
         t0 = va.y;
         t1 = va.z;
-        dx = rectArea(a, b, t0, t1);
+        dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.y;
         s0 = sa.y;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -197,7 +190,7 @@ float calcArea(){
         //t2-t3 above
         t0 = va.z;
         t1 = va.w;
-        dx = rectArea(a, b, t0, t1);
+        dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.z;
         s0 = sa.z;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -206,7 +199,7 @@ float calcArea(){
         //t3-t4 above
         t0 = va.w;
         t1 = vb.x;
-        dx = rectArea(a, b, t0, t1);
+        dx = rectIntegrate(a, b, t0, t1);
         io0 = ioa.w;
         s0 = sa.w;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -216,7 +209,7 @@ float calcArea(){
         //t4-t5 above
         t0 = vb.x;
         t1 = vb.y;
-        dx = rectArea(a, b, t0, t1);
+        dx = rectIntegrate(a, b, t0, t1);
         io0 = iob.x;
         s0 = sb.x;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -225,7 +218,7 @@ float calcArea(){
         //t5-t6 above
         t0 = vb.y;
         t1 = vb.z;
-        dx = rectArea(a, b, t0, t1);
+        dx = rectIntegrate(a, b, t0, t1);
         io0 = iob.y;
         s0 = sb.y;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -235,7 +228,7 @@ float calcArea(){
         //t6-t7 above
         t0 = vb.z;
         t1 = vb.w;
-        dx = rectArea(a, b, t0, t1);
+        dx = rectIntegrate(a, b, t0, t1);
         io0 = iob.z;
         s0 = sb.z;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -248,11 +241,13 @@ float calcArea(){
 
 void main () {
     float area = calcArea();
-    area = abs(area);
-    area = area / uPixelSize / uPixelSize / window / window;
-    area = clamp(area, 0.0, 1.0);
-    float shade = 1-area;
-    //shade = pow(shade, 1/2.2);
-    color = vec4(u_tint.rgb, (1-shade)*u_tint.a);
-    //color = vec4(vec3(0), 1);
+    if (area == -1) {
+        color = vec4(1, 0, 0, 1);
+    } else {
+        area = area / uPixelSize / uPixelSize / scale / scale;
+        area = clamp(area, 0.0, 1.0);
+        float shade = 1 - area;
+        shade = pow(shade, 1.0 / 2.2);
+        color = vec4(vec3(shade), 1);
+    }
 }

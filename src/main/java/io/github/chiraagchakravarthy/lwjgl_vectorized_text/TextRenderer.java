@@ -6,6 +6,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 import static io.github.chiraagchakravarthy.lwjgl_vectorized_text.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
@@ -128,7 +129,7 @@ public class TextRenderer {
      * @param x window pixel x
      * @param y window pixel y
      * @param font the font and scale
-     * @param color color (bruh)
+     * @param color color
      */
     public static void drawText(String text, float x, float y, VectorFont font, Color color){
         if(!initialized){

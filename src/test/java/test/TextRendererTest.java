@@ -1,3 +1,5 @@
+package test;
+
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
@@ -7,7 +9,6 @@ import java.awt.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class TextRendererTest {
@@ -17,17 +18,6 @@ public class TextRendererTest {
 
     public void run() {
         makeWindow();
-        int type = glGetFramebufferAttachmentParameteri(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
-        System.out.println(type==GL_NONE);
-        System.out.println(type==GL_FRAMEBUFFER_DEFAULT);
-        System.out.println(type==GL_TEXTURE);
-        System.out.println(type==GL_RENDERBUFFER);
-        type = glGetFramebufferAttachmentParameteri(GL_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
-        System.out.println(type==GL_NONE);
-        System.out.println(type==GL_FRAMEBUFFER_DEFAULT);
-        System.out.println(type==GL_TEXTURE);
-        System.out.println(type==GL_RENDERBUFFER);
-
         TextRenderer.init();
         render();
     }
@@ -62,26 +52,36 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/arial.ttf", 5);
-        float off = 0;
+        VectorFont font = new VectorFont("/font/ariblk.ttf", 10);
+        StringBuilder str = new StringBuilder();
+        for (int i = 0; i < 155; i++) {
+            str.append((char) i);
+        }
+        String s = str.toString();
 
         do {
-            glClear(GL_COLOR_BUFFER_BIT);
             fps();
-            for (int i = 0; i < 1; i++) {
-                TextRenderer.drawText("Hello", 100, 100+off, font, Color.BLACK);
-            }
+            glClear(GL_COLOR_BUFFER_BIT);
+            TextRenderer.drawText(s, 100, 100, font, Color.BLACK);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
         glfwTerminate();
     }
-
-    long time;
+    long lastTime = -1;
+    int frames;
     public void fps() {
+        frames++;
         long now = System.nanoTime();
-        System.out.println((now - time) / 1000000f);
-        time = now;
+        if(lastTime == -1){
+            lastTime = now;
+            return;
+        }
+        if(now-lastTime>=1000000000) {
+            System.out.println((float)(now - lastTime) / frames / 1000000f);
+            lastTime += 1000000000;
+            frames = 0;
+        }
     }
 
     public static void main(String[] args) throws InterruptedException {
