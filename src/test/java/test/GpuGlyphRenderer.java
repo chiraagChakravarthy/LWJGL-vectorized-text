@@ -15,8 +15,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 import static test.FileUtil.loadFont;
 
 public class GpuGlyphRenderer {
-    private final int WIDTH = 678;
-    private final int HEIGHT = 678;
+    private final int WIDTH = 1000;
+    private final int HEIGHT = 300;
 
     private long window;
     private Shader shader;
@@ -27,7 +27,7 @@ public class GpuGlyphRenderer {
     private float[] atlas;//beziers coefficients
     private float x0, y0, x1, y1;//bounds of glyph in glyph space
     private int count;//number of beziers in the glyph
-    private float pixelSize = 2;//how many glyph space units per screen pixel
+    private float pixelSize = 20;//how many glyph space units per screen pixel
     private float gx=101f, gy=101f;//pixel space coordinates of the origin of the glyph
 
     public void run() {
@@ -37,7 +37,7 @@ public class GpuGlyphRenderer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        initGlyph(')');
+        initGlyph('a');
 
         vertex();
         setupShaders();
@@ -160,7 +160,7 @@ public class GpuGlyphRenderer {
     }
 
     private void setupShaders() {
-        shader = new Shader("/shader/text.vert", "/shader/text3.frag");
+        shader = new Shader("/shader2/text.vert", "/shader2/text3.frag");
     }
 
     private void render() {

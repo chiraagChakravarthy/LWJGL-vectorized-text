@@ -1,5 +1,6 @@
 package test;
 
+import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
@@ -12,8 +13,8 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class TextRendererTest {
-    private final int WIDTH = 1200;
-    private final int HEIGHT = 678;
+    private final int WIDTH = 1000;
+    private final int HEIGHT = 500;
     private long window;
 
     public void run() {
@@ -39,7 +40,6 @@ public class TextRendererTest {
         }
         glfwMakeContextCurrent(window);
         GL.createCapabilities();
-        //GL.create();
         System.out.println("Using GL Version: " + glGetString(GL_VERSION));
 
         // Open a window and create its OpenGL context
@@ -52,17 +52,19 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/ariblk.ttf");
+        VectorFont font = new VectorFont("/font/arial.ttf");
         StringBuilder str = new StringBuilder();
         for (int i = 0; i < 155; i++) {
             str.append((char) i);
         }
         String s = str.toString();
+        s = "hello";
+        Vector4f color = new Vector4f(0, 0, 0, 1);
 
         do {
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            TextRenderer.drawText(s, 100, 100, font, 10);
+            TextRenderer.drawText("hello", 100, 100, font, 30, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
@@ -84,7 +86,7 @@ public class TextRendererTest {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         new TextRendererTest().run();
     }
 }

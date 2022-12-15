@@ -245,6 +245,7 @@ void main () {
         color = vec4(1, 0, 0, 1);
     } else {
         area = area / uPixelSize / uPixelSize / scale / scale;
+        area = abs(area);
         area = clamp(area, 0.0, 1.0);
         float shade = 1 - area;
         shade = pow(shade, 1.0 / 2.2);

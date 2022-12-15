@@ -13,7 +13,7 @@ public class FontTest {
     public static void main(String[] args) throws IOException {
         STBTTFontinfo info = loadFont("/font/ariblk.ttf");
 
-        int codepoint = ')';
+        int codepoint = '|';
 
         STBTTVertex.Buffer vertices = stbtt_GetCodepointShape(info, codepoint);
         int count = vertices.remaining();

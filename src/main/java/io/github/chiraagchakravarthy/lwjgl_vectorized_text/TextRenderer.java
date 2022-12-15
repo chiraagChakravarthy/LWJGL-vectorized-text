@@ -1,10 +1,12 @@
 package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
 
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 import static io.github.chiraagchakravarthy.lwjgl_vectorized_text.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
@@ -16,11 +18,12 @@ import static org.lwjgl.opengl.GL31.*;
  */
 public class TextRenderer {
     public static final int MAX_LEN = 1000;
-    private static int shader, uAtlas, uString, uPixelSize, u_MVP, uTextPos, uTint;
+    private static int shader, u_Atlas, u_String, u_EmScale, u_Mvp, u_Tint, u_Pose, u_Viewport;
     private static int textVao;
     private static int stringBuffer, stringBufferTex;
-    private static boolean initialized = false;
 
+    private static Matrix4f mvp;
+    private static boolean initialized = false;
     private static final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
 
     /**
@@ -31,6 +34,7 @@ public class TextRenderer {
         initShaders();
         initVao();
         initStringBuffer();
+        mvp = new Matrix4f().ortho(-1, 1, -1, 1, -1, 1);
         initialized = true;
     }
 
@@ -52,23 +56,19 @@ public class TextRenderer {
     private static void initShaders() {
         shader = createShader("/shader/text.vert", "/shader/text.frag");
 
-        uAtlas = glGetUniformLocation(shader, "uAtlas");
-        uString = glGetUniformLocation(shader, "uString");
+        u_Atlas = glGetUniformLocation(shader, "u_Atlas");
+        u_String = glGetUniformLocation(shader, "u_String");
 
-        uPixelSize = glGetUniformLocation(shader, "uPixelSize");
-        u_MVP = glGetUniformLocation(shader, "u_MVP");
-        uTextPos = glGetUniformLocation(shader, "uTextPos");
-        uTint = glGetUniformLocation(shader, "u_tint");
+        u_EmScale = glGetUniformLocation(shader, "u_EmScale");
+        u_Mvp = glGetUniformLocation(shader, "u_Mvp");
+        u_Pose = glGetUniformLocation(shader, "u_Pose");
+        u_Tint = glGetUniformLocation(shader, "u_Tint");
+        u_Viewport = glGetUniformLocation(shader, "u_Viewport");
 
         glUseProgram(shader);
-        glUniform1i(uAtlas, 0);
-        glUniform1i(uString, 1);
-        glUniform4f(uTint, 0, 0, 0, 1);
+        glUniform1i(u_Atlas, 0);
+        glUniform1i(u_String, 1);
         glUseProgram(0);
-        /*shader2.bind();
-        shader2.setUniform1i("uAtlas", 0);
-        shader2.setUniform1i("uString", 1);
-        shader2.unbind();*/
     }
 
     private static void initVao(){
@@ -123,15 +123,17 @@ public class TextRenderer {
         TextRenderer.textVao = vao;
     }
 
-    /** Sets the rgba fill color of the drawn text (default is opaque black)
-     *
-     * @param r red
-     * @param g green
-     * @param b blue
-     * @param a alpha
+    private static void assertInitialized(){
+        if(!initialized){
+            throw new RuntimeException("Text renderer is not initialized");
+        }
+    }
+
+    /**
+     * @param mvp model view projection matrix (camera)
      */
-    public static void fillColor(float r, float g, float b, float a){
-        glUniform4f(uTint, r, g, b, a);
+    public static void setMvp(Matrix4f mvp){
+        TextRenderer.mvp = mvp;
     }
 
     /** Draw some text!
@@ -140,22 +142,50 @@ public class TextRenderer {
      * @param x window pixel x
      * @param y window pixel y
      * @param font the typeface
-     * @param px the pixel scale of the text
+     * @param pxScale the pixel scale of the text
+     *
+     * ignores the current mvp
      */
-    public static void drawText(String text, float x, float y, VectorFont font, float px){
-        if(!initialized){
-            throw new RuntimeException("Text renderer is not initialized");
-        }
-        int len = Math.min(text.length(), MAX_LEN);
-
-        uploadString(text, len, font);
-
-        drawText(font, x, y, px, len);
+    public static void drawText(String text, float x, float y, VectorFont font, float pxScale, Vector4f color){
+        assertInitialized();
+        int[] viewport = new int[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        int vx = viewport[0];
+        int vy = viewport[1];
+        int vw = viewport[2];
+        int vh = viewport[3];
+        Matrix4f mvp = new Matrix4f().ortho(vx, vx+vw, vy, vy+vh, -1, 1);
+        Matrix4f pose = new Matrix4f().translate(x, y, 0).scale(pxScale);
+        drawText(text, font, pose, color, mvp, viewport);
     }
 
-    private static void drawText(VectorFont font, float x, float y, float px, int len){
+    /** A more comprehensive draw text
+     *
+     * @param text string to draw
+     * @param font the typeface
+     * @param pose position, scale, and rotation of text in 3d space
+     * @param color rgba color (0,1)
+     */
+    public static void drawText(String text, VectorFont font, Matrix4f pose, Vector4f color){
+        assertInitialized();
+        int[] viewport = new int[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        drawText(text, font, pose, color, mvp, viewport);
+    }
+
+
+    private static void drawText(String text, VectorFont font, Matrix4f pose, Vector4f color, Matrix4f mvp, int[] viewport){
+        assertInitialized();
+
+        int len = Math.min(MAX_LEN, text.length());
+        uploadString(text, len, font);
         glUseProgram(shader);
-        setUniforms(px, font, x, y);
+
+        glUniform4f(u_Tint, color.x, color.y, color.z, color.w);
+        glUniformMatrix4fv(u_Pose, false, pose.get(matrixBuffer));
+        glUniformMatrix4fv(u_Mvp, false, mvp.get(matrixBuffer));
+        glUniform4f(u_Viewport, viewport[0], viewport[1], viewport[2], viewport[3]);
+        glUniform1f(u_EmScale, font.emScale);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -167,23 +197,8 @@ public class TextRenderer {
 
         glBindVertexArray(textVao);
 
-        glDrawElements(GL_TRIANGLES, len*6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, len * 6, GL_UNSIGNED_INT, 0);
     }
-
-    private static void setUniforms(float px, VectorFont font, float x, float y){
-        int[] viewport = new int[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        int vx = viewport[0];
-        int vy = viewport[1];
-        int vw = viewport[2];
-        int vh = viewport[3];
-
-        Matrix4f mvp = new Matrix4f().ortho(vx, vx+vw, vy, vy+vh, -1, 1);
-        glUniformMatrix4fv(u_MVP, false, mvp.get(matrixBuffer));
-        glUniform1f(uPixelSize, 1f/(font.emScale*px));
-        glUniform2f(uTextPos, x, y);
-    }
-
     private static void uploadString(String text, int len, VectorFont font){
         char[] codepoints = text.toCharArray();
 
