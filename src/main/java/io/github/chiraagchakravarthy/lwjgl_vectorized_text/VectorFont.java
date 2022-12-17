@@ -23,7 +23,9 @@ public class VectorFont {
 
     protected final int atlasTexture;
     protected final STBTTFontinfo font;
-    protected final int[] advance, kern;
+    protected final int[] advance, kern, bounds;
+
+    protected final int ascent;
 
     /**
      *
@@ -31,6 +33,7 @@ public class VectorFont {
      */
     public VectorFont(String path) {
         advance = new int[256];
+        bounds = new int[256*4];
         kern = new int[256*256];
         try {
             this.font = FileUtil.loadFont(path);
@@ -51,6 +54,10 @@ public class VectorFont {
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
 
         makeTables();
+
+        int[] ascent = new int[1], descent = new int[1], lineGap = new int[1];
+        stbtt_GetFontVMetrics(font, ascent, descent, lineGap);
+        this.ascent = ascent[0];
     }
 
 
@@ -111,6 +118,7 @@ public class VectorFont {
             }
             int[] leftBearing = new int[1], advance = new int[1];
             stbtt_GetCodepointHMetrics(font, i, advance, leftBearing);
+
             this.advance[i] = advance[0];
         }
     }
@@ -119,6 +127,10 @@ public class VectorFont {
         int[] x0a = new int[1], x1a = new int[1], y0a = new int[1], y1a = new int[1];
         stbtt_GetCodepointBox(font, i, x0a, y0a, x1a, y1a);
         int x0 = x0a[0], x1 = x1a[0], y0 = y0a[0], y1 = y1a[0];
+        bounds[i*4] = x0;
+        bounds[i*4+1] = y0;
+        bounds[i*4+2] = x1;
+        bounds[i*4+3] = y1;
         atlas[257+ i *4] = x0;
         atlas[257+ i *4+1] = y0;
         atlas[257+ i *4+2] = x1;

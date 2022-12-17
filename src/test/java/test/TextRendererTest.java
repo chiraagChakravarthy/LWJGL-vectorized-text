@@ -2,6 +2,7 @@ package test;
 
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
@@ -50,7 +51,7 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/minecraft_font.ttf");
+        VectorFont font = new VectorFont("/font/arial.ttf");
         StringBuilder str = new StringBuilder();
         for (int i = '!'; i < 155; i++) {
             str.append((char) i);
@@ -63,12 +64,13 @@ public class TextRendererTest {
 
         do {
             v += 0.01f;
-            Matrix4f pose = new Matrix4f().translate(100, 100, 0).scale(100).rotate(v, (float) Math.cos(v*Math.PI/3), (float) Math.sin(v*Math.PI/3), 0);
+            Matrix4f pose = new Matrix4f().translate(300, 300, 0).scale(100).rotate(v, 0, 0, 1);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
 
             //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
-            completelyUnnecessaryObject.drawText("hello", font, pose, color);
+            //completelyUnnecessaryObject.drawText("hello", pose, font, color);
+            completelyUnnecessaryObject.drawTextAligned("xcoooooom", pose, new Vector2f(), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

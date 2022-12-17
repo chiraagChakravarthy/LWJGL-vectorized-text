@@ -27,6 +27,7 @@ class FileUtil {
         byte[] bytes = new byte[(int) input.available()];
         DataInputStream dataInputStream = new DataInputStream(input);
         dataInputStream.readFully(bytes);
+        input.close();
         return bytes;
     }
 }
