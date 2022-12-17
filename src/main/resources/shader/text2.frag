@@ -10,6 +10,7 @@ uniform vec4 u_Tint;
 uniform float u_EmScale;
 uniform mat4 u_Mvp;
 uniform mat4 u_Pose;
+uniform mat4 u_Screen;
 uniform vec4 u_Viewport;
 
 //size of pixel in glyph space
@@ -42,14 +43,6 @@ vec2 findRoots(float a, float b, float c, int s){
 
 ivec4 findSide(vec4 t){
     return floatBitsToInt(t)&ivec4(3);
-}
-
-ivec4 findIo(vec4 t, ivec4 side, float a, float b, float d, float e){
-    ivec4 n = (side&ivec4(1))*2-1;
-    bvec4 ineq = lessThan(side, ivec4(2));
-    vec4 A = mix(vec4(d), vec4(a), ineq);
-    vec4 B = mix(vec4(e), vec4(b), ineq);
-    return ivec4(mix(vec4(1), vec4(-1), greaterThan((2*A*t+B)*n, vec4(0))));
 }
 
 float integrate(float a, float b, float d, float e, float f, float t0, float t1){
@@ -95,16 +88,15 @@ float calcArea(vec2 minPos, vec2 maxPos){
 
     //iterate through beziers
     int start = texelFetch(u_Atlas, iGlyph).x, end = texelFetch(u_Atlas, iGlyph+1).x;
-
     mat4 transform = u_Mvp * u_Pose;
 
     for (int i = start; i < end; i++) {
         float overlap = 0;
         int j = i*6+257+256*4;
 
-        vec2 a = (transform*vec4(u_EmScale*fetch(j), 0, 0)).xy;
-        vec2 b = (transform*vec4(u_EmScale*fetch(j+1), 0, 0)).xy;
-        vec2 c = (transform*vec4(u_EmScale*(fetch(j+2)+vec2(vAdvance, 0)), 0, 1)).xy;
+        vec2 a = (transform*vec4(u_EmScale*fetch(j), 0, 0)).xy*u_Viewport.zw/2/u_EmScale;
+        vec2 b = (transform*vec4(u_EmScale*fetch(j+1), 0, 0)).xy*u_Viewport.zw/2/u_EmScale;
+        vec2 c = ((transform*vec4(u_EmScale*(fetch(j+2)+vec2(vAdvance, 0)), 0, 1)).xy+vec2(1,1))*u_Viewport.zw/2/u_EmScale;
 
         //vec2 a = (transform*vec4(u_EmScale*vec2(4, -1), 0, 0)).xy;
         //vec2 b = (transform*vec4(u_EmScale*vec2(46, -32), 0, 0)).xy;
@@ -188,9 +180,18 @@ float calcArea(vec2 minPos, vec2 maxPos){
         ivec4 sa = findSide(va);
         ivec4 sb = findSide(vb);
 
-        //compute exit/enter
-        ivec4 ioa = findIo(va, sa, a.x, b.x, a.y, b.y);
-        ivec4 iob = findIo(vb, sb, a.x, b.x, a.y, b.y);
+        ivec4 ioa = ivec4(1);
+        ivec4 iob = ivec4(1);
+        //0, 1, 0/2, 1, 0/2, 1, 0/2, 1, 0
+
+        ioa.x = 1;
+        ioa.y = int(mix(1,-1, sa.x/2==sa.y/2));
+        ioa.z = -ioa.y;
+        ioa.w = ioa.z * int(mix(1, -1, sa.z/2==sa.w/2));
+        iob.x = -ioa.w;
+        iob.y = iob.x * int(mix(1, -1, sb.x/2==sb.y/2));
+        iob.z = -iob.y;
+        iob.w = -1;
 
         //initial depth (small logical errors here, will fix if it causes problems)
         int squareDepth = int(mix(0.0, 1.0, a.x==0&&b.x==0&&c.x>minPos.x&&c.x<maxPos.x || a.y==0&&b.y==0&&c.y>minPos.y&&c.y<maxPos.y));
@@ -277,13 +278,15 @@ float calcArea(vec2 minPos, vec2 maxPos){
 }
 
 void main () {
-    vec2 delta = vec2((1 + window) / 4.0) * vec2(2 / u_Viewport.z, 2 / u_Viewport.w);
-    vec2 maxPos = vScreenPos + delta;
-    vec2 minPos = vScreenPos - delta;
+    vec2 delta = vec2((1 + window) / 4.0)/u_EmScale;
+    vec2 pixelPos = (vScreenPos+vec2(1))*u_Viewport.zw/2/u_EmScale;
+
+    vec2 maxPos = pixelPos + delta;
+    vec2 minPos = pixelPos - delta;
 
     float area = calcArea(minPos, maxPos);
     area = abs(area);
-    area = area / window / window / (maxPos.x - minPos.x) / (maxPos.y - minPos.y);
+    area = area/(maxPos.x - minPos.x) / (maxPos.y - minPos.y);
     area = clamp(area, 0.0, 1.0);
     color = vec4(u_Tint.rgb, area * u_Tint.a);
 }

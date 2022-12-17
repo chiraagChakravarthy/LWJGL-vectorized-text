@@ -14,7 +14,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class TextRendererTest {
     private final int WIDTH = 1000;
-    private final int HEIGHT = 500;
+    private final int HEIGHT = 700;
     private long window;
 
     public void run() {
@@ -54,17 +54,17 @@ public class TextRendererTest {
     private void render() {
         VectorFont font = new VectorFont("/font/arial.ttf");
         StringBuilder str = new StringBuilder();
-        for (int i = 0; i < 155; i++) {
+        for (int i = '!'; i < 155; i++) {
             str.append((char) i);
         }
         String s = str.toString();
-        s = "hello";
         Vector4f color = new Vector4f(0, 0, 0, 1);
-
+        float v = 0;
         do {
+            //v += .01f;
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            TextRenderer.drawText("hello", 100, 100, font, 30, color);
+            TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
