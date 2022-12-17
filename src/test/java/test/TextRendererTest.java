@@ -57,20 +57,21 @@ public class TextRendererTest {
             str.append((char) i);
         }
         String s = str.toString();
-        Vector4f color = new Vector4f(0.75f, 0.75f, 0.75f, 1);
+        Vector4f color = new Vector4f(0, 0, 0, 1);
         float v = 0;
 
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
-
+        Matrix4f pose = new Matrix4f().translate(500, 300, 0).scale(100);
         do {
             v += 0.01f;
-            Matrix4f pose = new Matrix4f().translate(300, 300, 0).scale(100).rotate(v, 0, 0, 1);
+            Matrix4f rotate = new Matrix4f().rotate(.03f, (float) Math.cos(Math.PI/2*v), (float) Math.sin(Math.PI/2*v), 0);
+            pose.mul(rotate);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
 
             //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
             //completelyUnnecessaryObject.drawText("hello", pose, font, color);
-            completelyUnnecessaryObject.drawTextAligned("xcoooooom", pose, new Vector2f(), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
+            completelyUnnecessaryObject.drawTextAligned("xcoooooom", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

@@ -49,7 +49,7 @@ publishing {
 		mavenJava(MavenPublication) {
 			groupId = 'io.github.chiraagchakravarthy'
 			artifactId = 'lwjgl-vectorized-text'
-			version = "0.0.3-SNAPSHOT"
+			version = "0.0.4-SNAPSHOT"
 			from components.java
 
 			pom {

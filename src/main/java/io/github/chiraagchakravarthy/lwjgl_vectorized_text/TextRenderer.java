@@ -38,7 +38,7 @@ public class TextRenderer {
      * call after creating opengl capabilities
      * loads shaders, initializes buffers and vertex array
      */
-    static void init(){
+    private static void init(){
         initShaders();
         initVao();
         initStringBuffer();
@@ -150,7 +150,7 @@ public class TextRenderer {
      * @param y window pixel y
      * @param font the typeface
      * @param pxScale the pixel scale of the text
-     * @param  color color of text
+     * @param  color rgba color (0,1)
      * ignores the current mvp
      */
     public void drawText2D(String text, float x, float y, float pxScale, VectorFont font, Vector4f color){
@@ -169,19 +169,43 @@ public class TextRenderer {
         drawText(len, font, pose, color, mvp, viewport);
     }
 
-    /**
+    /** Draw text with different alignment
      *
-     * @param text
-     * @param pose
-     * @param align
-     * @param alignType
-     * @param font
-     * @param color
+     * @param text string what drawn
+     * @param pose position, scale, rotation
+     * @param align where within the string is its 'position'
+     *              (-1, -1): bottom left
+     *              (1, 1) top right
+     * @param alignType align with the geometric string bounds, or with fixed height bounds
+     * @param font typeface to render with
+     * @param color rgba color (0,1)
      */
     public void drawTextAligned(String text, Matrix4f pose, Vector2f align, TextBoundType alignType, VectorFont font, Vector4f color){
         assertInitialized();
+        int len = Math.min(MAX_LEN, text.length());
+        int[] bounds = new int[4];
+        uploadStringAndGetBounds(text, len, font, bounds);
+
+        int x0 = bounds[0], y0 = bounds[1], x1 = bounds[2], y1 = bounds[3];
+        if(alignType == TextBoundType.BASELINE){
+            y0 = 0;
+            y1 = font.ascent;
+        }
+
+        float cx = (x1-x0)/2f*font.emScale, cy = (y1-y0)/2f*font.emScale;
+        float dx = cx*(align.x+1), dy = cy*(align.y+1);
+        Vector4f oPos = pose.transform(new Vector4f());//translate component
+        Vector4f cPos = pose.transform(new Vector4f(dx, dy, 0, 1));//center transformed;
+        pose = new Matrix4f().translate(oPos.x-cPos.x, oPos.y-cPos.y, oPos.z-cPos.z).mul(pose);
+
+        int[] viewport = new int[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+
+        drawText(len, font, pose, color, mvp, viewport);
+    }
+
+    private void uploadStringAndGetBounds(String text, int len, VectorFont font, int[] bounds){
         char[] codepoints = text.toCharArray();
-        int len = Math.min(MAX_LEN, codepoints.length);
 
         int[] data = new int[len*2];
 
@@ -215,35 +239,17 @@ public class TextRenderer {
 
         int x0 = font.bounds[codepoints[0]*4];
         int x1 = advance + font.bounds[codepoints[len-1]*4+2];
-
-        if(alignType == TextBoundType.BASELINE){
-            y0 = 0;
-            y1 = font.ascent;
-        }
-
-        float cx = (x1-x0)/2f*font.emScale, cy = (y1-y0)/2f*font.emScale;
-
-        Vector4f oPos = pose.transform(new Vector4f());//translate component
-
-        float dx = cx*(align.x+1), dy = cy*(align.y+1);
-        Vector4f cPos = pose.transform(new Vector4f(dx, dy, 0, 1));//center transformed;
-
-        pose = new Matrix4f().translate(oPos.x-cPos.x, oPos.y-cPos.y, oPos.z-cPos.z).mul(pose);
-
-
-        int[] viewport = new int[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
-
-        drawText(len, font, pose, color, mvp, viewport);
+        bounds[0] = x0;
+        bounds[1] = y0;
+        bounds[2] = x1;
+        bounds[3] = y1;
     }
-
-
 
     /** A more comprehensive draw text
      *
-     * @param text string to draw
+     * @param text string what drawn
      * @param font the typeface
-     * @param pose position, scale, and rotation of text in 3d space
+     * @param pose position, scale, and rotation
      * @param color rgba color (0,1)
      */
     public void drawText(String text, Matrix4f pose, VectorFont font, Vector4f color){
@@ -256,7 +262,7 @@ public class TextRenderer {
     }
 
 
-    private static void drawText(int len, VectorFont font, Matrix4f pose, Vector4f color, Matrix4f mvp, int[] viewport){
+    private void drawText(int len, VectorFont font, Matrix4f pose, Vector4f color, Matrix4f mvp, int[] viewport){
         glUseProgram(shader);
 
         glUniform4f(u_Tint, color.x, color.y, color.z, color.w);
@@ -277,7 +283,7 @@ public class TextRenderer {
 
         glDrawElements(GL_TRIANGLES, len * 6, GL_UNSIGNED_INT, 0);
     }
-    private static void uploadString(String text, int len, VectorFont font){
+    private void uploadString(String text, int len, VectorFont font){
         char[] codepoints = text.toCharArray();
 
         int[] data = new int[len*2];
