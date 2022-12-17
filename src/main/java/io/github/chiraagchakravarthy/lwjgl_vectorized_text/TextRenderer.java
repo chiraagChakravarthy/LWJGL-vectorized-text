@@ -17,7 +17,7 @@ import static org.lwjgl.opengl.GL31.*;
  */
 public class TextRenderer {
     public static final int MAX_LEN = 1000;
-    private static int shader, u_Atlas, u_String, u_EmScale, u_Mvp, u_Tint, u_Pose, u_Viewport, u_Screen;
+    private static int shader, u_Atlas, u_String, u_EmScale, u_Mvp, u_Tint, u_Pose, u_Viewport;
     private static int textVao;
     private static int stringBuffer, stringBufferTex;
 
@@ -63,7 +63,6 @@ public class TextRenderer {
         u_Pose = glGetUniformLocation(shader, "u_Pose");
         u_Tint = glGetUniformLocation(shader, "u_Tint");
         u_Viewport = glGetUniformLocation(shader, "u_Viewport");
-        u_Screen = glGetUniformLocation(shader, "u_Screen");
 
         glUseProgram(shader);
         glUniform1i(u_Atlas, 0);
@@ -179,12 +178,9 @@ public class TextRenderer {
         uploadString(text, len, font);
         glUseProgram(shader);
 
-        Matrix4f screen = new Matrix4f().ortho(0, viewport[2], 0, viewport[3], -1, 1);
-
         glUniform4f(u_Tint, color.x, color.y, color.z, color.w);
         glUniformMatrix4fv(u_Pose, false, pose.get(matrixBuffer));
         glUniformMatrix4fv(u_Mvp, false, mvp.get(matrixBuffer));
-        glUniformMatrix4fv(u_Screen, false, screen.get(matrixBuffer));
         glUniform4f(u_Viewport, viewport[0], viewport[1], viewport[2], viewport[3]);
         glUniform1f(u_EmScale, font.emScale);
 

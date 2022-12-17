@@ -1,5 +1,6 @@
 package test;
 
+import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
@@ -60,11 +61,17 @@ public class TextRendererTest {
         String s = str.toString();
         Vector4f color = new Vector4f(0, 0, 0, 1);
         float v = 0;
+
+        TextRenderer.setMvp(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -100, 100));
+
         do {
-            //v += .01f;
+            v += 0.1f;
+            Matrix4f pose = new Matrix4f().translate(100, 100, 0).scale(30).rotate(v, (float) Math.cos(v*Math.PI/3), (float) Math.sin(v*Math.PI/3), 0);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
+
+            //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
+            TextRenderer.drawText("hello", font, pose, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
