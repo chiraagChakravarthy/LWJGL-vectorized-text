@@ -1,13 +1,11 @@
 package test;
 
+import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.VectorFont;
-
-import java.awt.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -20,7 +18,6 @@ public class TextRendererTest {
 
     public void run() {
         makeWindow();
-        TextRenderer.init();
         render();
     }
 
@@ -53,25 +50,25 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/arial.ttf");
+        VectorFont font = new VectorFont("/font/minecraft_font.ttf");
         StringBuilder str = new StringBuilder();
         for (int i = '!'; i < 155; i++) {
             str.append((char) i);
         }
         String s = str.toString();
-        Vector4f color = new Vector4f(0, 0, 0, 1);
+        Vector4f color = new Vector4f(0.75f, 0.75f, 0.75f, 1);
         float v = 0;
 
-        TextRenderer.setMvp(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -100, 100));
+        TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
 
         do {
-            v += 0.1f;
-            Matrix4f pose = new Matrix4f().translate(100, 100, 0).scale(30).rotate(v, (float) Math.cos(v*Math.PI/3), (float) Math.sin(v*Math.PI/3), 0);
+            v += 0.01f;
+            Matrix4f pose = new Matrix4f().translate(100, 100, 0).scale(100).rotate(v, (float) Math.cos(v*Math.PI/3), (float) Math.sin(v*Math.PI/3), 0);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
 
             //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
-            TextRenderer.drawText("hello", font, pose, color);
+            completelyUnnecessaryObject.drawText("hello", font, pose, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

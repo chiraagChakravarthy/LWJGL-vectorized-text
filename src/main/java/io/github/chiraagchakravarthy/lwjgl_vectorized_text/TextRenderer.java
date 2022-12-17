@@ -19,21 +19,27 @@ public class TextRenderer {
     public static final int MAX_LEN = 1000;
     private static int shader, u_Atlas, u_String, u_EmScale, u_Mvp, u_Tint, u_Pose, u_Viewport;
     private static int textVao;
-    private static int stringBuffer, stringBufferTex;
-
-    private static Matrix4f mvp;
     private static boolean initialized = false;
     private static final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
+    private static int stringBuffer, stringBufferTex;
+    private Matrix4f mvp;
+
+    public TextRenderer(Matrix4f mvp){
+        this.mvp = mvp;
+    }
+
+    public TextRenderer(){
+        mvp = new Matrix4f().ortho(-1, 1, -1, 1, -1, 1);
+    }
 
     /**
      * call after creating opengl capabilities
      * loads shaders, initializes buffers and vertex array
      */
-    public static void init(){
+    static void init(){
         initShaders();
         initVao();
         initStringBuffer();
-        mvp = new Matrix4f().ortho(-1, 1, -1, 1, -1, 1);
         initialized = true;
     }
 
@@ -53,7 +59,7 @@ public class TextRenderer {
     }
 
     private static void initShaders() {
-        shader = createShader("/shader/text.vert", "/shader/text2.frag");
+        shader = createShader("/shader/text.vert", "/shader/text.frag");
 
         u_Atlas = glGetUniformLocation(shader, "u_Atlas");
         u_String = glGetUniformLocation(shader, "u_String");
@@ -124,15 +130,15 @@ public class TextRenderer {
 
     private static void assertInitialized(){
         if(!initialized){
-            throw new RuntimeException("Text renderer is not initialized");
+            init();
         }
     }
 
     /**
      * @param mvp model view projection matrix (camera)
      */
-    public static void setMvp(Matrix4f mvp){
-        TextRenderer.mvp = mvp;
+    public void setMvp(Matrix4f mvp){
+        this.mvp = mvp;
     }
 
     /** Draw some text!
@@ -142,10 +148,10 @@ public class TextRenderer {
      * @param y window pixel y
      * @param font the typeface
      * @param pxScale the pixel scale of the text
-     *
+     * @param  color color of text
      * ignores the current mvp
      */
-    public static void drawText(String text, float x, float y, VectorFont font, float pxScale, Vector4f color){
+    public void drawText(String text, float x, float y, VectorFont font, float pxScale, Vector4f color){
         assertInitialized();
         int[] viewport = new int[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
@@ -165,7 +171,7 @@ public class TextRenderer {
      * @param pose position, scale, and rotation of text in 3d space
      * @param color rgba color (0,1)
      */
-    public static void drawText(String text, VectorFont font, Matrix4f pose, Vector4f color){
+    public void drawText(String text, VectorFont font, Matrix4f pose, Vector4f color){
         assertInitialized();
         int[] viewport = new int[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
