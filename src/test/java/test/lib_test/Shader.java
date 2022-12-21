@@ -1,4 +1,4 @@
-package test;
+package test.lib_test;
 
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryUtil;
@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 
 import static org.lwjgl.opengl.GL20.*;
-import static test.FileUtil.readFile;
+import static test.lib_test.FileUtil.readFile;
 
 
 public class Shader {

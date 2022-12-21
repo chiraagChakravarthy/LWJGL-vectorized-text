@@ -1,4 +1,4 @@
-package test;
+package test.lib_test;
 
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import static org.lwjgl.stb.STBTruetype.*;
-import static test.FileUtil.loadFont;
+import static test.lib_test.FileUtil.loadFont;
 
 public class FontTest {
     public static void main(String[] args) throws IOException {

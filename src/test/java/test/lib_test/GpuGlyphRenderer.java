@@ -1,4 +1,4 @@
-package test;
+package test.lib_test;
 
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -12,7 +12,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.stb.STBTruetype.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
-import static test.FileUtil.loadFont;
+import static test.lib_test.FileUtil.loadFont;
 
 public class GpuGlyphRenderer {
     private final int WIDTH = 1000;

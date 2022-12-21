@@ -2,7 +2,6 @@
 layout (location=0) out vec4 color;
 
 #define epsilon 0.0001
-#define window 1.0
 //scaling factor of intersect window for pixel
 
 uniform isamplerBuffer u_Atlas;
@@ -208,7 +207,7 @@ float calcArea(vec2 minPos, vec2 maxPos){
         //t0-t1 above
         t0 = va.x;
         t1 = va.y;
-        dx = rectArea(a.x, b.x, t0, t1)*h;
+        dx = rectArea(a.x, b.x, t0, t1)*h*window;
         io0 = ioa.x;
         s0 = sa.x;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -217,7 +216,7 @@ float calcArea(vec2 minPos, vec2 maxPos){
         //t1-t2 above
         t0 = va.y;
         t1 = va.z;
-        dx = rectArea(a.x, b.x, t0, t1)*h;
+        dx = rectArea(a.x, b.x, t0, t1)*h*window;
         io0 = ioa.y;
         s0 = sa.y;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -227,7 +226,7 @@ float calcArea(vec2 minPos, vec2 maxPos){
         //t2-t3 above
         t0 = va.z;
         t1 = va.w;
-        dx = rectArea(a.x, b.x, t0, t1)*h;
+        dx = rectArea(a.x, b.x, t0, t1)*h*window;
         io0 = ioa.z;
         s0 = sa.z;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -236,7 +235,7 @@ float calcArea(vec2 minPos, vec2 maxPos){
         //t3-t4 above
         t0 = va.w;
         t1 = vb.x;
-        dx = rectArea(a.x, b.x, t0, t1)*h;
+        dx = rectArea(a.x, b.x, t0, t1)*h*window;
         io0 = ioa.w;
         s0 = sa.w;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -246,7 +245,7 @@ float calcArea(vec2 minPos, vec2 maxPos){
         //t4-t5 above
         t0 = vb.x;
         t1 = vb.y;
-        dx = rectArea(a.x, b.x, t0, t1)*h;
+        dx = rectArea(a.x, b.x, t0, t1)*h*window;
         io0 = iob.x;
         s0 = sb.x;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -255,7 +254,7 @@ float calcArea(vec2 minPos, vec2 maxPos){
         //t5-t6 above
         t0 = vb.y;
         t1 = vb.z;
-        dx = rectArea(a.x, b.x, t0, t1)*h;
+        dx = rectArea(a.x, b.x, t0, t1)*h*window;
         io0 = iob.y;
         s0 = sb.y;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));
@@ -265,7 +264,7 @@ float calcArea(vec2 minPos, vec2 maxPos){
         //t6-t7 above
         t0 = vb.z;
         t1 = vb.w;
-        dx = rectArea(a.x, b.x, t0, t1)*h;
+        dx = rectArea(a.x, b.x, t0, t1)*h*window;
         io0 = iob.z;
         s0 = sb.z;
         aboveDepth += int(mix(mix(float(io0), -float(io0), s0==3), 0.0, s0==2));

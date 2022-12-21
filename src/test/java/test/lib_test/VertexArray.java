@@ -1,4 +1,4 @@
-package test;
+package test.lib_test;
 
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;

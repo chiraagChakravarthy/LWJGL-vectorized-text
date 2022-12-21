@@ -1,4 +1,4 @@
-package test;
+package test.lib_test;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBTTFontinfo;

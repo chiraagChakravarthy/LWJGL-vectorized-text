@@ -1,4 +1,4 @@
-package test;
+package test.lib_test;
 
 import static org.lwjgl.opengl.GL11.*;
 

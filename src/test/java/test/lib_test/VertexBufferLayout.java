@@ -1,4 +1,4 @@
-package test;
+package test.lib_test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
