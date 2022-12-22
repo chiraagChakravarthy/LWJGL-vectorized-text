@@ -1,0 +1,27 @@
+we want to compute the angle a curve winds between two values of t
+
+if we have a point, we can compute its absolute angle
+if we take the difference between two angles, we obtain a relative angle
+theta1 + dtheta = theta2
+if both sides are normalized to [0,2pi], it is still true
+
+we have 4 points
+P0
+P 1st stationary
+P 2nd stationary
+P1
+
+betweeen each of these points, the angle is monotonic with respect to t, meaning it either only decreases or increases
+compute the 2nd derivative at each of these points
+if it is less than 0, then theta is decreasing between the current and next point
+thus the delta theta between these points is negative
+vise versa with positive 2nd derivative
+
+thus we know whether the dtheta between these points is negative or positive
+since the winding number is in range (-1,1) locally, we know dtheta is in range [-2pi, 2pi]
+thus depending on whether it should be negative, and whether it is negative, we add or substract 2pi or 0 to the value of dtheta
+
+we append this value of dtheta to a running sum
+repeat for all the intervals
+the end value should be the proper signed delta theta
+if it isn't ill kms

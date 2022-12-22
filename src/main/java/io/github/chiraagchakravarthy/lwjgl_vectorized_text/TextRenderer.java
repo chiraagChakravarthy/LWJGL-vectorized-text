@@ -154,6 +154,9 @@ public class TextRenderer {
      * ignores the current mvp
      */
     public void drawText2D(String text, float x, float y, float pxScale, VectorFont font, Vector4f color){
+        if(text.isEmpty()){
+            return;
+        }
         assertInitialized();
         int[] viewport = new int[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
@@ -181,6 +184,9 @@ public class TextRenderer {
      * @param color rgba color (0,1)
      */
     public void drawTextAligned(String text, Matrix4f pose, Vector2f align, TextBoundType alignType, VectorFont font, Vector4f color){
+        if(text.isEmpty()){
+            return;
+        }
         assertInitialized();
         int len = Math.min(MAX_LEN, text.length());
         int[] bounds = new int[4];
@@ -253,6 +259,9 @@ public class TextRenderer {
      * @param color rgba color (0,1)
      */
     public void drawText(String text, Matrix4f pose, VectorFont font, Vector4f color){
+        if(text.isEmpty()){
+            return;
+        }
         assertInitialized();
         int[] viewport = new int[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
