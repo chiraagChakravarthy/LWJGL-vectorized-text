@@ -52,26 +52,27 @@ public class TextRendererTest {
 
     private void render() {
         VectorFont font = new VectorFont("/font/arial.ttf");
+
         StringBuilder str = new StringBuilder();
         for (int i = '!'; i < 155; i++) {
             str.append((char) i);
         }
         String s = str.toString();
-        Vector4f color = new Vector4f(0,0,0, 1);
+        Vector4f color = new Vector4f(0,0,0,1);
         float v = 0;
 
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
-        Matrix4f pose = new Matrix4f().translate(500, 300, 0).scale(5);
+        Matrix4f pose = new Matrix4f().translate(500, 300, 0).scale(50);
         do {
 
             //Matrix4f rotate = new Matrix4f().rotate(.003f, 0, 1, 0);
             //pose.mul(rotate);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            pose.scale(1.01f);
+            //pose.scale(1.01f);
             //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
             //completelyUnnecessaryObject.drawText("hello", pose, font, color);
-            completelyUnnecessaryObject.drawTextAligned(s, pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, font, color);
+            completelyUnnecessaryObject.drawTextAligned("Hello", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

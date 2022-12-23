@@ -12,12 +12,13 @@ uniform mat4 u_Mvp;
 uniform mat4 u_Pose;
 uniform mat4 u_Screen;
 uniform vec4 u_Viewport;
+uniform int u_FontLen;
 
 //size of pixel in glyph space
 //depending on program to provide this info
 
 in vec2 vScreenPos;//position in screen space
-in float vGlyph;//which glyph to render
+in float vIndex;//which glyph to render
 in float vAdvance;
 
 vec2 findRoots(float a, float b, float c, int s){
@@ -84,23 +85,19 @@ float calcArea(vec2 minPos, vec2 maxPos){
 
     float total = 0;
 
-    int iGlyph = int(vGlyph);
+    int index = int(vIndex);
 
     //iterate through beziers
-    int start = texelFetch(u_Atlas, iGlyph).x, end = texelFetch(u_Atlas, iGlyph+1).x;
+    int start = texelFetch(u_Atlas, index).x, end = texelFetch(u_Atlas, index +1).x;
     mat4 transform = u_Mvp * u_Pose;
 
     for (int i = start; i < end; i++) {
         float overlap = 0;
-        int j = i*6+257+256*4;
+        int j = i*6 + u_FontLen*4+u_FontLen+1;
 
         vec2 a = (transform*vec4(u_EmScale*fetch(j), 0, 0)).xy*u_Viewport.zw/2/u_EmScale;
         vec2 b = (transform*vec4(u_EmScale*fetch(j+1), 0, 0)).xy*u_Viewport.zw/2/u_EmScale;
         vec2 c = ((transform*vec4(u_EmScale*(fetch(j+2)+vec2(vAdvance, 0)), 0, 1)).xy+vec2(1,1))*u_Viewport.zw/2/u_EmScale;
-
-        //vec2 a = (transform*vec4(u_EmScale*vec2(4, -1), 0, 0)).xy;
-        //vec2 b = (transform*vec4(u_EmScale*vec2(46, -32), 0, 0)).xy;
-        //vec2 c = (transform*vec4(u_EmScale*(vec2(1055, 479)), 0, 1)).xy;
 
         vec2 roots1 = findRoots(a.x, b.x, c.x - minPos.x, 0);//left
         vec2 roots2 = findRoots(a.x, b.x, c.x - maxPos.x, 1);//right
@@ -290,4 +287,5 @@ void main () {
     area = clamp(area, 0.0, 1.0);
     //area = pow(area, 1/2.2);
     color = vec4(u_Tint.rgb, area * u_Tint.a);
+    //color = vec4(vec3(0),1);
 }

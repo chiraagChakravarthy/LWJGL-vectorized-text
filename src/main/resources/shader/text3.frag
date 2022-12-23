@@ -238,7 +238,6 @@ float integrateAngle(float a, float b, float c, float d, float e, float f, float
 
         float deltaTheta1 = thetaS1 -theta0;//relative theta from P0 to Ps1 unormalized
 
-
         deltaTheta1 = correctDeltaTheta(deltaTheta1, dTheta0);
         total += deltaTheta1;
 
@@ -290,7 +289,7 @@ float calcArea(vec2 o){
 
   for (int i = start; i < end; i++) {
       float overlap = 0;
-      int j = i*6+257+256*4;
+      int j = i*6 + 257 + 256*iGlyph;
 
       vec2 a = (transform*vec4(fetch(j), 0, 0)).xy*u_Viewport.zw/2;
       vec2 b = (transform*vec4(fetch(j+1), 0, 0)).xy*u_Viewport.zw/2;

@@ -19,7 +19,7 @@ import static org.lwjgl.opengl.GL31.*;
  */
 public class TextRenderer {
     public static final int MAX_LEN = 1000;
-    private static int shader, u_Atlas, u_String, u_EmScale, u_Mvp, u_Tint, u_Pose, u_Viewport;
+    private static int shader, u_Atlas, u_String, u_EmScale, u_Mvp, u_Tint, u_Pose, u_Viewport, u_FontLen;
     private static int textVao;
     private static boolean initialized = false;
     private static final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
@@ -71,6 +71,7 @@ public class TextRenderer {
         u_Pose = glGetUniformLocation(shader, "u_Pose");
         u_Tint = glGetUniformLocation(shader, "u_Tint");
         u_Viewport = glGetUniformLocation(shader, "u_Viewport");
+        u_FontLen = glGetUniformLocation(shader, "u_FontLen");
 
         glUseProgram(shader);
         glUniform1i(u_Atlas, 0);
@@ -201,7 +202,7 @@ public class TextRenderer {
         float cx = (x1-x0)/2f*font.emScale, cy = (y1-y0)/2f*font.emScale;
         float dx = cx*(align.x+1), dy = cy*(align.y+1);
         Vector4f oPos = pose.transform(new Vector4f());//translate component
-        Vector4f cPos = pose.transform(new Vector4f(dx, dy, 0, 1));//center transformed;
+        Vector4f cPos = pose.transform(new Vector4f(dx, dy, 0, 1));//center transformed
         pose = new Matrix4f().translate(oPos.x-cPos.x, oPos.y-cPos.y, oPos.z-cPos.z).mul(pose);
 
         int[] viewport = new int[4];
@@ -210,41 +211,71 @@ public class TextRenderer {
         drawText(len, font, pose, color, mvp, viewport);
     }
 
+
+    //returns the string size at 1px scale
+    public Vector4f getStringBounds(String text, VectorFont font, TextBoundType type){
+        char[] codepoints = text.toCharArray();
+        int len = Math.min(MAX_LEN, text.length());
+
+        int y0 = font.bound(codepoints[0], 1);
+        int y1 = font.bound(codepoints[0], 3);
+
+        char prevCodepoint = codepoints[0];
+        int advance = 0;
+
+        for (int i = 1; i < len; i++) {
+            char codepoint = codepoints[i];
+
+            advance += font.advance(prevCodepoint);
+            advance += font.kern(prevCodepoint, codepoint);
+            prevCodepoint = codepoint;
+            y0 = Math.min(font.bound(codepoint, 1), y0);
+            y1 = Math.max(font.bound(codepoint, 3), y1);
+        }
+        int x0 = font.bound(codepoints[0], 0);
+        int x1 = font.bound(codepoints[len-1], 2)+advance;
+        if(type == TextBoundType.BASELINE){
+            y0 = 0;
+            y1 = font.ascent;
+        }
+        return new Vector4f(x0, y0, x1, y1).mul(font.emScale);
+    }
+
     private void uploadStringAndGetBounds(String text, int len, VectorFont font, int[] bounds){
         char[] codepoints = text.toCharArray();
 
         int[] data = new int[len*2];
 
-        data[0] = codepoints[0];
+        data[0] = font.indexOf(codepoints[0]);
         data[1] = 0;
 
-        int y0 = font.bounds[codepoints[0]*4+1];
-        int y1 = font.bounds[codepoints[0]*4+3];
+        int y0 = font.bound(codepoints[0], 1);
+        int y1 = font.bound(codepoints[0], 3);
 
-        int prevCodepoint = codepoints[0];
+        char prevCodepoint = codepoints[0];
 
         int advance = 0;
 
         for (int i = 1; i < len; i++) {
-            int codepoint = codepoints[i];
-            advance += font.advance[prevCodepoint];
-            advance += font.kern[prevCodepoint*256+codepoint];
+            char codepoint = codepoints[i];
+            advance += font.advance(prevCodepoint);
+            advance += font.kern(prevCodepoint, codepoint);
 
-            data[i*2] = codepoint;
+            data[i*2] = font.indexOf(codepoint);
             data[i*2+1] = advance;
 
             prevCodepoint = codepoint;
 
-            y0 = Math.min(font.bounds[codepoint*4+1], y0);
-            y1 = Math.max(font.bounds[codepoint*4+3], y1);
+            y0 = Math.min(font.bound(codepoint, 1), y0);
+            y1 = Math.max(font.bound(codepoint, 3), y1);
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, stringBuffer);
         glBufferSubData(GL_ARRAY_BUFFER, 0, data);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        int x0 = font.bounds[codepoints[0]*4];
-        int x1 = advance + font.bounds[codepoints[len-1]*4+2];
+        int x0 = font.bound(codepoints[0], 0);
+        int x1 = advance + font.bound(codepoints[codepoints.length-1], 2);
         bounds[0] = x0;
         bounds[1] = y0;
         bounds[2] = x1;
@@ -274,6 +305,7 @@ public class TextRenderer {
     private void drawText(int len, VectorFont font, Matrix4f pose, Vector4f color, Matrix4f mvp, int[] viewport){
         glUseProgram(shader);
 
+        glUniform1i(u_FontLen, font.len);
         glUniform4f(u_Tint, color.x, color.y, color.z, color.w);
         glUniformMatrix4fv(u_Pose, false, pose.get(matrixBuffer));
         glUniformMatrix4fv(u_Mvp, false, mvp.get(matrixBuffer));
@@ -300,13 +332,13 @@ public class TextRenderer {
         data[0] = codepoints[0];
         data[1] = 0;
 
-        int prevCodepoint = codepoints[0];
+        char prevCodepoint = codepoints[0];
 
         int advance = 0;
         for (int i = 1; i < len; i++) {
-            int codepoint = codepoints[i];
-            advance += font.advance[prevCodepoint];
-            advance += font.kern[prevCodepoint*256+codepoint];
+            char codepoint = codepoints[i];
+            advance += font.advance(prevCodepoint);
+            advance += font.kern(prevCodepoint, codepoint);
 
             data[i*2] = codepoint;
             data[i*2+1] = advance;

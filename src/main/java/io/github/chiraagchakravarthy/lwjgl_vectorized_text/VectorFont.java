@@ -4,6 +4,8 @@ import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 
 import static org.lwjgl.opengl.GL11.glBindTexture;
 import static org.lwjgl.opengl.GL11.glGenTextures;
@@ -18,34 +20,52 @@ public class VectorFont {
     /** em per glyph unit
      * 10px scale means 10 pixels/em
      * thus pixelScale = #px * emScale
+     *
+     * charIndex: the index of the character in the atlas
      */
+
+    public static final String ASCII, DEFAULT;
+
+    static {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < 128; i++) {
+            b.append((char)i);
+        }
+        ASCII = b.toString();
+        for (int i = 128; i < 256; i++) {
+            b.append((char)i);
+        }
+        DEFAULT = b.toString();
+    }
+
+    private HashMap<Character, Integer> indexMap;//maps codepoints to their index in the atlas
     protected final float emScale;
 
     protected final int atlasTexture;
     protected final STBTTFontinfo font;
     protected final int[] advance, kern, bounds;
 
-    protected final int ascent;
+    protected final int ascent, len;
 
-    /**
-     *
-     * @param path path to ttf file
-     */
-    public VectorFont(String path) {
-        advance = new int[256];
-        bounds = new int[256*4];
-        kern = new int[256*256];
+    private int[] atlas;
+
+    public VectorFont(String path, String characters){
         try {
             this.font = FileUtil.loadFont(path);
         } catch (IOException e) {
             throw new RuntimeException("Could not find font at \"" + path + "\"");
         }
 
-        emScale = stbtt_ScaleForMappingEmToPixels(font, 1);
+        indexMap = new HashMap<>();
+        char[] chars = characters.toCharArray();
+        this.len = removeDuplicates(chars);
+        advance = new int[len];
+        kern = new int[len*len];
+        bounds = new int[len*4];
+
+        atlas = genAtlas(chars);
 
         int atlasBuffer = glGenBuffers();
-        int[] atlas = genAtlas();
-
         glBindBuffer(GL_ARRAY_BUFFER, atlasBuffer);
         glBufferData(GL_ARRAY_BUFFER, atlas, GL_STATIC_READ);
 
@@ -53,11 +73,47 @@ public class VectorFont {
         glBindTexture(GL_TEXTURE_BUFFER, atlasTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
 
-        makeTables();
+        makeTables(chars);
 
         int[] ascent = new int[1], descent = new int[1], lineGap = new int[1];
         stbtt_GetFontVMetrics(font, ascent, descent, lineGap);
         this.ascent = ascent[0];
+        emScale = stbtt_ScaleForMappingEmToPixels(font, 1);
+    }
+
+    private int removeDuplicates(char[] chars){
+        Arrays.sort(chars);
+        char prev = chars[0];
+        int len = 1;
+
+        for (int i = 1; i < chars.length; i++) {
+            char curr = chars[i];
+            if(curr == prev){
+                continue;
+            }
+            chars[len] = curr;
+            prev = curr;
+            len++;
+        }
+        return len;
+    }
+
+    /**
+     *
+     * @param path path to ttf file
+     */
+    public VectorFont(String path) {
+        this(path, DEFAULT);
+    }
+
+    //debug
+    public void print(char codepoint){
+        int start = atlas[indexOf(codepoint)];
+        int end = atlas[indexOf(codepoint)+1];
+        for (int i = start; i < end; i++) {
+            int j = i*6+len*4+len+1;
+            System.out.printf("(%dt^2+%dt+%d,%dt^2+%dt+%d)%n", atlas[j], atlas[j+1], atlas[j+2], atlas[j+3], atlas[j+4], atlas[j+5]);
+        }
     }
 
 
@@ -68,16 +124,19 @@ public class VectorFont {
         this("/font/arial.ttf");
     }
 
-    private int[] genAtlas(){
-        int[][] glyphs = new int[256][];
-        int[] index = new int[257];
+    private int[] genAtlas(char[] chars){
+        int[][] glyphs = new int[len][];
+        int[] index = new int[len+1];
 
         int curr = 0;
         index[0] = 0;
 
         //all unicode chars
-        for (int i = 0; i < 256; i++) {
-            STBTTVertex.Buffer glyphShape = stbtt_GetCodepointShape(font, i);
+        for (int i = 0; i < len; i++) {
+            char codepoint = chars[i];
+            indexMap.put(codepoint, i);
+
+            STBTTVertex.Buffer glyphShape = stbtt_GetCodepointShape(font, codepoint);
             int[] glyph = null;
             if(glyphShape != null){
                 int count = glyphShape.remaining();
@@ -88,53 +147,49 @@ public class VectorFont {
             glyphs[i] = glyph;
         }
 
-        int[] atlas = new int[257+256*4+curr*6];
-        System.arraycopy(index, 0, atlas, 0, 257);
+        int[] atlas = new int[len+1+len*4+curr*6];
+
+        System.arraycopy(index, 0, atlas, 0,len+1);
 
         for(int i = 0; i < glyphs.length; i++){
             int[] glyph = glyphs[i];
             int start = index[i], end = index[i+1];
+            char codepoint = chars[i];
             if(glyph != null) {
-                System.arraycopy(glyph, 0, atlas, start*6+257+256*4, (end-start)*6);
-                addBounds(atlas, i);
+                System.arraycopy(glyph, 0, atlas, start*6+len+1+len*4, (end-start)*6);
+                addBounds(atlas, i, codepoint);
             }
         }
-
-        /*int start = atlas[')'], end = atlas[')'+1];
-        for (int i = start; i < end; i++) {
-            int j = i*6+256*4+257;
-            System.out.printf("(%dt^2+%dt+%d,%dt^2+%dt+%d)%n", atlas[j], atlas[j+1], atlas[j+2], atlas[j+3], atlas[j+4], atlas[j+5]);
-        }
-        System.out.printf("(%dt+%d, %dt+%d)%n", atlas[257+4*')'], atlas[257+4*')'+2]-atlas[257+4*')'], atlas[257+4*')'+1], atlas[257+4*')'+3]-atlas[257+4*')'+1]);
-        */
         return atlas;
     }
 
-    private void makeTables(){
-        for (int i = 0; i < 256; i++) {
-            for (int j = 0; j < 256; j++) {
-                //char1 * 256 + char2
-                kern[i*256+j] = stbtt_GetCodepointKernAdvance(font, i, j);
+    private void makeTables(char[] chars){
+        for (int i = 0; i < len; i++) {
+            char codepointi = chars[i];
+            for (int j = 0; j < len; j++) {
+                char codepointj = chars[j];
+                kern[i*len+j] = stbtt_GetCodepointKernAdvance(font, codepointi, codepointj);
             }
+
             int[] leftBearing = new int[1], advance = new int[1];
-            stbtt_GetCodepointHMetrics(font, i, advance, leftBearing);
+            stbtt_GetCodepointHMetrics(font, codepointi, advance, leftBearing);
 
             this.advance[i] = advance[0];
         }
     }
 
-    private void addBounds(int[] atlas, int i) {
+    private void addBounds(int[] atlas, int i, char codepoint) {
         int[] x0a = new int[1], x1a = new int[1], y0a = new int[1], y1a = new int[1];
-        stbtt_GetCodepointBox(font, i, x0a, y0a, x1a, y1a);
+        stbtt_GetCodepointBox(font, codepoint, x0a, y0a, x1a, y1a);
         int x0 = x0a[0], x1 = x1a[0], y0 = y0a[0], y1 = y1a[0];
         bounds[i*4] = x0;
         bounds[i*4+1] = y0;
         bounds[i*4+2] = x1;
         bounds[i*4+3] = y1;
-        atlas[257+ i *4] = x0;
-        atlas[257+ i *4+1] = y0;
-        atlas[257+ i *4+2] = x1;
-        atlas[257+ i *4+3] = y1;
+        atlas[len+1 + i*4] = x0;
+        atlas[len+1 + i*4+1] = y0;
+        atlas[len+1 + i*4+2] = x1;
+        atlas[len+1 + i*4+3] = y1;
     }
 
     private static int extractGlyphShape(STBTTVertex.Buffer glyphShape, int count, int[] glyph) {
@@ -167,5 +222,21 @@ public class VectorFont {
             }
         }
         return k/6;
+    }
+
+    public int bound(char codepoint, int i) {
+        return bounds[indexMap.get(codepoint)*4+i];
+    }
+
+    public int advance(char codepoint) {
+        return advance[indexMap.get(codepoint)];
+    }
+
+    public int kern(char char0, char char1) {
+        return kern[indexMap.get(char0)*len+indexMap.get(char1)];
+    }
+
+    public int indexOf(char codepoint) {
+        return indexMap.get(codepoint);
     }
 }

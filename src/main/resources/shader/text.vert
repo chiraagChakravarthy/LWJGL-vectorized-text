@@ -40,26 +40,28 @@ TERMS:
 #define padding 2
 
 layout(location=0) in ivec2 glyphCorner;//which corner
-layout(location=1) in int index;//which character in the string to render
+layout(location=1) in int stringIndex;//which character in the string to render
 
 uniform mat4 u_Mvp;//translates 3d world space -> screen space
 uniform float u_EmScale;
 uniform mat4 u_Pose;//translates em space -> 3d world space
 uniform vec4 u_Viewport;
+uniform int u_FontLen;
 
 uniform isamplerBuffer u_Atlas;//the atlas for the font
 uniform isamplerBuffer u_String;//the characters and their advances
 
 out vec2 vScreenPos;//the screen space position
-out float vGlyph;//the codepoint being rendered
+out float vIndex;//index of the character being rendered
 out float vAdvance;//the advance in glyph space
 
 
 //compute glyph space min and max point
 void main(){
-    int codepoint = texelFetch(u_String, index*2).x;
-    int advance = texelFetch(u_String, index*2+1).x;
-    int j = 257+codepoint*4;
+    int charIndex = texelFetch(u_String, stringIndex *2).x;
+    int advance = texelFetch(u_String, stringIndex *2+1).x;
+
+    int j = charIndex*4 + u_FontLen +1;
 
     vec2 minG = vec2(texelFetch(u_Atlas, j).x, texelFetch(u_Atlas, j+1).x);
     vec2 maxG = vec2(texelFetch(u_Atlas, j+2).x, texelFetch(u_Atlas, j+3).x);
@@ -79,6 +81,6 @@ void main(){
     gl_Position = sG;
     gl_Position.z = 0;
     vScreenPos = sG.xy;
-    vGlyph = codepoint;
+    vIndex = charIndex;
     vAdvance = advance;
 }
