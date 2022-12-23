@@ -122,12 +122,6 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
     return n;
 }
 
-int findIntercepts(float, out vec4 roots) {
-    //(ax2+bx+c-ox)^2+(dx2+ex+f-oy)^2-r2=0
-
-    return solveQuartic(A, B, C, D, E, roots);
-}
-
 //optimize and stabilize later, if needed
 //integrates the window function 1-r^2 over the polar region from tb to ta
 //negative at the end bc clockwise is positive
@@ -151,6 +145,8 @@ float integrateWindow(float i7, float i6, float i5, float i4, float i3, float i2
     return val;
 }
 
+//coefficients for the polynomial which gives the weighted area
+//based on the parabolic window function 1-r2
 void windowIntegralCoeff(float a, float b, float c, float d, float e, float f, out float I1, out float I2, out float I3, out float I4, out float I5, out float I6, out float I7) {
     float A = b * d - a * e;
     float B = 2*(c*d-a*f);
@@ -161,10 +157,10 @@ void windowIntegralCoeff(float a, float b, float c, float d, float e, float f, o
     float G = 2*(b*c+e*f);
     float H = c*c+f*f;
 
-    float scl = 3.0/(8*R*R);
-    I1 = scl*(R*R*C-(0.5*H*C));
-    I2 = scl*(R*R*B-(0.25*(H*B-G*C)));
-    I3 = scl*(R*R*A-1/6.0*(F*C+G*B+H*A));
+    float scl = 1/R/R;
+    I1 = scl*(R*R*C-(H*C/2.0));
+    I2 = scl*(R*R*B-(H*B-G*C)/4.0);
+    I3 = scl*(R*R*A-(F*C+G*B+H*A)/6.0);
     I4 = -scl/8.0*(E*C+F*B+G*A);
     I5 = -scl/10.0*(D*C+E*B+F*A);
     I6 = -scl/12.0*(D*B+E*A);
@@ -230,15 +226,17 @@ float integrateAngle(float a, float b, float c, float d, float e, float f, float
     float theta0 = atan(p0.y, p0.x);
 
     float dTheta0 = 2*A*t0+B;//tells us if theta is increasing or decreasing at t0
+    float d2Theta0 = d2(a, b, c, d, e, f, t0);
 
     if(num>0){
         float ts1 = roots.x;//1st stationary t
         vec2 ps1 = vA* ts1 * ts1 +vB* ts1 +vC;//1st stationary point
         float thetaS1 = atan(ps1.y, ps1.x);//stationary point angle
 
-        float deltaTheta1 = thetaS1 -theta0;//relative theta from P0 to Ps1 unormalized
+        float deltaTheta1 = thetaS1 -theta0;//relative theta from P0 to Ps1 unnormalized
 
-        deltaTheta1 = correctDeltaTheta(deltaTheta1, dTheta0);
+
+        deltaTheta1 = correctDeltaTheta(deltaTheta1, mix(dTheta0, d2Theta0, abs(dTheta0)<epsilon));
         total += deltaTheta1;
 
         if(num>1){
@@ -261,10 +259,6 @@ float integrateAngle(float a, float b, float c, float d, float e, float f, float
             t0 = ts1;
             dTheta0 = d2(a, b, c, d, e, f, ts1);
         }
-
-        //float d2ThetaS = d2(a, b, c, d, e, f, t0);
-
-        //now we compute the second derivative
     }
     vec2 p1 = vA*t1*t1+vB*t1+vC;
     float theta1 = atan(p1.y,p1.x);
@@ -289,7 +283,7 @@ float calcArea(vec2 o){
 
   for (int i = start; i < end; i++) {
       float overlap = 0;
-      int j = i*6 + 257 + 256*iGlyph;
+      int j = i*6+257+256*4;
 
       vec2 a = (transform*vec4(fetch(j), 0, 0)).xy*u_Viewport.zw/2;
       vec2 b = (transform*vec4(fetch(j+1), 0, 0)).xy*u_Viewport.zw/2;
