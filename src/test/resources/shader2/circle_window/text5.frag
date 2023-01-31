@@ -115,38 +115,10 @@ vec3 solveCubic(float d, float a, float b, float c){
     return roots;
 }
 
-vec4 seek(float a, float b, float c, float d, float e, vec4 t0, vec4 t1){
-    vec4 interval = (t1-t0)/2;
-    vec4 t2 = t0;
-    for(int i = 0; i < 20; i++){
-        vec4 v2 = evalQuartic(a, b, c, d, e, t2);
-        t2 += mix(-interval, interval, lessThan(v2, vec4(0)));
-        interval /= 2;
-    }
-    return t2;
-}
 
 vec3 sort(vec3 v){
     vec2 t = vec2(min(v.x, v.y), max(v.x, v.y));
     return vec3(min(t.x, v.z), min(max(v.z, t.x), t.y), max(t.y, v.z));
-}
-
-vec4 solveQuartic(float a, float b, float c, float d, float e){
-    if(abs(a)<epsilon){
-        return vec4(solveQuadratic(c, d, e), 1, 1);
-    }
-
-    vec3 st = solveCubic(4*a, 3*b, 2*c, d);
-    st = sort(st);
-
-
-    vec4 t0 = vec4(st.x, st.x, st.z, st.z);
-    vec4 t1 = vec4(0, st.y, st.y, 1);
-    vec4 roots = seek(a, b, c, d, e, t0, t1);
-
-    vec3 v = evalQuartic(a, b, c, d, e, vec4(st, 1)).xyz;
-    roots = mix(vec4(1), roots, bvec4(v.x<0, v.x<0&&v.y>0, v.z<0&&v.y>0, v.z<0));
-    return roots;
 }
 
 float angleIntegrate(float a, float b, float c, float d, float e, float f, float t0, float t1){
@@ -202,7 +174,7 @@ vec2 quadApprox(float a, float b, float c, float d, float e, float t) {
     return solveQuadratic(A, B, C);
 }
 
-vec4 solveQuartic3(float a, float b, float c, float d, float e){
+vec4 solveQuartic(float a, float b, float c, float d, float e){
     if(abs(a)<epsilon){
         return vec4(solveQuadratic(c, d, e), 1, 1);
     }
@@ -249,7 +221,7 @@ float calcArea(vec2 pos, float r){
         k1 = 2*(b*c+e*f),
         k0 = c*c+f*f-R2;
 
-        vec4 roots = solveQuartic3(k4, k3, k2, k1, k0);
+        vec4 roots = solveQuartic(k4, k3, k2, k1, k0);
 
         float i3 = (d*b-a*e)*.5/3,
         i2 = .5*(c*d-a*f),
