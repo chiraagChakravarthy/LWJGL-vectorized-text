@@ -1,4 +1,4 @@
-package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
+package test.alg_test;
 
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
@@ -7,15 +7,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.GL_R32I;
-import static org.lwjgl.opengl.GL31.GL_TEXTURE_BUFFER;
-import static org.lwjgl.opengl.GL31.glTexBuffer;
 import static org.lwjgl.stb.STBTruetype.*;
 
-public class VectorFont {
+public class VectorFont2 {
 
     /** em per glyph unit
      * 10px scale means 10 pixels/em
@@ -38,19 +32,18 @@ public class VectorFont {
         DEFAULT = b.toString();
     }
 
-    private final HashMap<Character, Integer> indexMap;//maps codepoints to their index in the atlas
-    protected final float emScale;
+    private HashMap<Character, Integer> indexMap;//maps codepoints to their index in the atlas
+    public final float emScale;
 
-    protected final int atlasTexture;
     protected final STBTTFontinfo font;
     protected final int[] advance, kern, bounds;
 
     protected final int ascent;
-    protected final int len;
+    public final int len;
 
-    private final int[] atlas;
+    public int[] atlas;
 
-    public VectorFont(String path, String characters){
+    public VectorFont2(String path, String characters){
         try {
             this.font = FileUtil.loadFont(path);
         } catch (IOException e) {
@@ -65,14 +58,6 @@ public class VectorFont {
         bounds = new int[len*4];
 
         atlas = genAtlas(chars);
-
-        int atlasBuffer = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, atlasBuffer);
-        glBufferData(GL_ARRAY_BUFFER, atlas, GL_STATIC_READ);
-
-        atlasTexture = glGenTextures();
-        glBindTexture(GL_TEXTURE_BUFFER, atlasTexture);
-        glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
 
         makeTables(chars);
 
@@ -103,7 +88,7 @@ public class VectorFont {
      *
      * @param path path to ttf file
      */
-    public VectorFont(String path) {
+    public VectorFont2(String path) {
         this(path, DEFAULT);
     }
 
@@ -121,7 +106,7 @@ public class VectorFont {
     /**
      * uses arial by default
      */
-    public VectorFont(){
+    public VectorFont2(){
         this("/font/arial.ttf");
     }
 

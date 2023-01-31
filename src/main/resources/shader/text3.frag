@@ -1,9 +1,9 @@
 #version 330 core
-layout (location = 0) out vec4 color;
+layout (location=0) out vec4 color;
 
-#define epsilon 0.00001
-#define PI 3.14159265359
-#define R 1.0
+#define epsilon 0.0001
+#define R 0.7071067812
+#define PI 3.1415926535
 //scaling factor of intersect window for pixel
 
 uniform isamplerBuffer u_Atlas;
@@ -13,38 +13,141 @@ uniform mat4 u_Mvp;
 uniform mat4 u_Pose;
 uniform mat4 u_Screen;
 uniform vec4 u_Viewport;
+uniform int u_FontLen;
 
 //size of pixel in glyph space
 //depending on program to provide this info
 
 in vec2 vScreenPos;//position in screen space
-in float vGlyph;//which glyph to render
+in float vIndex;//which glyph to render
 in float vAdvance;
 
-float cbrt(in float x) {
-    return sign(x) * pow(abs(x), 1.0 / 3.0);
+vec2 fetch(int j){
+    return  vec2(texelFetch(u_Atlas, j).x, texelFetch(u_Atlas, j+3).x);
 }
 
-int solveQuadratic(float a, float b, float c, out vec2 roots){
-    roots = vec2(1);
+vec4 evalQuartic(float a, float b, float c, float d, float e, vec4 t){
+    vec4 t2 = t*t;
+    vec4 t3 = t2*t;
+    vec4 t4 = t3*t;
+    return a*t4+b*t3+c*t2+d*t+e;
+}
+
+vec2 solveQuadratic(float a, float b, float c){
+    vec2 roots = vec2(1);
     if(abs(a)<epsilon){
-        if(abs(b)<epsilon){
-            return 0;
+        if(abs(b)>epsilon){
+            roots.x = -c/b;
         }
-        roots.x = -c/b;
-        return 1;
+    } else {
+        float dis = b*b-4*a*c;
+        if(dis >= 0){
+            float sqr = sqrt(dis);
+            float t1 = (-b-sqr)/(2*a);
+            float t2 = (-b+sqr)/(2*a);
+            roots.x = min(t1, t2);
+            roots.y = max(t1, t2);
+        }
     }
-
-    float det = b*b-4*a*c;
-    if(det<0){
-        return 0;
-    }
-    float sqr = sqrt(det);
-    roots = (vec2(-b)+vec2(sqr,-sqr))/(2*a);
-    return 2;
+    return roots;
 }
 
-int solveQuartic(in float a, in float b, in float c, in float d, in float e, inout vec4 roots) {
+vec2 interceptLineBezier(float a, float b, float c, float d, float e, float f, float sx, float sy){
+    float A,B,C;
+    if (abs(sx) < epsilon) {
+        A = a;
+        B = b;
+        C = c;
+    } else if (abs(sy) < epsilon) {
+        A = d;
+        B = e;
+        C = f;
+    } else {
+        A = a / sx - d / sy;
+        B = b / sx - e / sy;
+        C = c / sx - f / sy;
+    }
+    return solveQuadratic(A, B, C);
+}
+
+float cbrt(float v){
+    float cbr = pow(abs(v), .3333333);
+    return mix(cbr, -cbr, v<0);
+}
+
+float windowIntegrate(float a, float b, float c, float ta, float tb, float r){
+    float t1 = tb-ta,
+    t2 = tb*tb-ta*ta,
+    t3 = tb*tb*tb-ta*ta*ta;
+    return (a*t3+b*t2+c*t1)/r/r;
+}
+
+vec3 solveCubic(float d, float a, float b, float c){
+    a = a/d;
+    b = b/d;
+    c = c/d;
+
+    float p = b/3-a*a/9;
+    float q = a*a*a/27-a*b/6+c/2;
+    float D = p*p*p+q*q;
+    vec3 roots = vec3(1);
+
+    if(D>=0){
+        if(D==0){
+            float r = cbrt(-q);
+            roots.x = 2*r;
+            roots.y = -r;
+        } else {
+            float r = cbrt(-q+sqrt(D)),
+            s = cbrt(-q-sqrt(D));
+            roots.x = r+s;
+        }
+    } else {
+        float ang = acos(-q/sqrt(-p*p*p)),
+        r = 2*sqrt(-p);
+        roots.x = r*cos((ang+2*PI)/3);
+        roots.y = r*cos(ang/3);
+        roots.z = r*cos((ang-2*PI)/3);
+    }
+
+    roots -= vec3(a/3);
+    return roots;
+}
+
+vec4 seek(float a, float b, float c, float d, float e, vec4 t0, vec4 t1){
+    vec4 interval = (t1-t0)/2;
+    vec4 t2 = t0;
+    for(int i = 0; i < 20; i++){
+        vec4 v2 = evalQuartic(a, b, c, d, e, t2);
+        t2 += mix(-interval, interval, lessThan(v2, vec4(0)));
+        interval /= 2;
+    }
+    return t2;
+}
+
+vec3 sort(vec3 v){
+    vec2 t = vec2(min(v.x, v.y), max(v.x, v.y));
+    return vec3(min(t.x, v.z), min(max(v.z, t.x), t.y), max(t.y, v.z));
+}
+
+vec4 solveQuartic(float a, float b, float c, float d, float e){
+    if(abs(a)<epsilon){
+        return vec4(solveQuadratic(c, d, e), 1, 1);
+    }
+
+    vec3 st = solveCubic(4*a, 3*b, 2*c, d);
+    st = sort(st);
+    vec3 v = evalQuartic(a, b, c, d, e, vec4(st, 1)).xyz;
+
+    vec4 t0 = vec4(st.x, st.x, st.z, st.z);
+    vec4 t1 = vec4(0, st.y, st.y, 1);
+    vec4 roots = seek(a, b, c, d, e, t0, t1);
+
+    roots = mix(vec4(1), roots, bvec4(v.x<0, v.x<0&&v.y>0, v.z<0&&v.y>0, v.z<0));
+    return roots;
+}
+
+int solveQuartic2(in float a, in float b, in float c, in float d, in float e, inout vec4 roots) {
     roots = vec4(1);
     b /= a; c /= a; d /= a; e /= a; // Divide by leading coefficient to make it 1
 
@@ -122,226 +225,111 @@ int solveQuartic(in float a, in float b, in float c, in float d, in float e, ino
     return n;
 }
 
-//optimize and stabilize later, if needed
-//integrates the window function 1-r^2 over the polar region from tb to ta
-//negative at the end bc clockwise is positive
-float integrateWindow(float i7, float i6, float i5, float i4, float i3, float i2, float i1, float ta, float tb) {
-    float t2a = ta * ta;
-    float t3a = t2a * ta;
-    float t4a = t3a * ta;
-    float t5a = t4a * ta;
-    float t6a = t5a * ta;
-    float t7a = t6a * ta;
-
-    float t2b = tb * tb;
-    float t3b = t2b * tb;
-    float t4b = t3b * tb;
-    float t5b = t4b * tb;
-    float t6b = t5b * tb;
-    float t7b = t6b * tb;
-
-    float val = -(i7 * (t7a - t7b) + i6 * (t6a - t6b) + i5 * (t5a - t5b) + i4 * (t4a - t4b) + i3 * (t3a - t3b) + i2 * (t2a - t2b) + i1 * (ta - tb));
-
-    return val;
-}
-
-//coefficients for the polynomial which gives the weighted area
-//based on the parabolic window function 1-r2
-void windowIntegralCoeff(float a, float b, float c, float d, float e, float f, out float I1, out float I2, out float I3, out float I4, out float I5, out float I6, out float I7) {
-    float A = b * d - a * e;
-    float B = 2*(c*d-a*f);
-    float C = e*c-b*f;
-    float D = a*a+d*d;
-    float E = 2*(a*b+d*e);
-    float F = (2*a*c+b*b+2*d*f+e*e);
-    float G = 2*(b*c+e*f);
-    float H = c*c+f*f;
-
-    float scl = 1/R/R;
-    I1 = scl*(R*R*C-(H*C/2.0));
-    I2 = scl*(R*R*B-(H*B-G*C)/4.0);
-    I3 = scl*(R*R*A-(F*C+G*B+H*A)/6.0);
-    I4 = -scl/8.0*(E*C+F*B+G*A);
-    I5 = -scl/10.0*(D*C+E*B+F*A);
-    I6 = -scl/12.0*(D*B+E*A);
-    I7 = -scl/14.0*(D*A);
-}
-
-//counterclockwise is negative, clockwise is positive
-float integrateArea(float A, float B, float C, float D, float E, float F, float ta, float tb) {
-    float avg = (A + B + C + D + E + F) / 6;
-    A /= avg;
-    B /= avg;
-    C /= avg;
-    D /= avg;
-    E /= avg;
-    F /= avg;
-
-    float t2a = ta * ta;
-    float t3a = t2a * ta;
-    float t2b = tb * tb;
-    float t3b = t2b * tb;
-    return -(1 / 3 * (B * D - A * E) * (t3a - t3b) + (D * C - A * F) * (t2a - t2b) + (C * E - B * F) * (ta - tb)) / 2 * avg;
-}
-
-//negative area means ccw means negative angle
-
-
-//d^2theta/dt
-float d2(float a, float b, float c, float d, float e, float f, float t){
-    float d2y = 2*d;
-    float d2x = 2*a;
-    float x = a*t*t+b*t+c;
-    float y = d*t*t+e*t+f;
-    float r2 = x*x+y*y;
-    float dx = 2*a*t+b;
-    float dy = 2*d*t+e;
-    return ((d2y*x-d2x*y)*r2-2*(x*dx+y*dy)*(dy*x-dx*y))/r2;
-}
-
-//adds or subtract full rotation to reflect whether the change in angle is negative or positive
-
-float correctDeltaTheta(float dTheta, float sgn){
-    if(sgn<0&&dTheta>0){
-        return dTheta-2*PI;
+float angleIntegrate(float a, float b, float c, float d, float e, float f, float t0, float t1){
+    float x0 = a*t0*t0+b*t0+c,
+    y0 = d*t0*t0+e*t0+f,
+    x1 = a*t1*t1+b*t1+c,
+    y1 = d*t1*t1+e*t1+f;
+    float theta0 = atan(y0, x0),
+    theta1 = atan(y1, x1);
+    float diff = theta1-theta0;
+    diff = mix(mix(diff, diff-2*PI, diff>PI), diff+2*PI, diff<-PI);
+    if(abs(diff)<.01f){
+        return diff;//removes degenerate cases
     }
-    if(sgn>0&&dTheta<0){
-        return dTheta+2*PI;
+    float theta2 = theta0+diff/2;
+    float sx = cos(theta2),
+    sy = sin(theta2);
+    vec2 roots = interceptLineBezier(a, b, c, d, e, f, sx, sy);
+    float t2 = mix(roots.y, roots.x, roots.x<t1&&roots.x>t0);
+
+    vec2 x2 = vec2(a,d)*t2*t2+vec2(b,e)*t2+vec2(c,f);
+    float prod = dot(x2, vec2(sx, sy));
+
+    if(prod>0){
+        return diff;
     }
-    return dTheta;
+    //it took the long way round
+
+    return mix(mix(diff, diff-2*PI, diff>0), diff+2*PI, diff<0);
+    //if somehow a 0 diff manages to make it through here then there you go
 }
 
-float integrateAngle(float a, float b, float c, float d, float e, float f, float t0, float t1) {
-    float A = b*d-a*e;//dtheta/dt = At2+Bt+C
-    float B = 2*(c*d-a*f);
-    float C = e*c-b*f;
+
+float calcArea(vec2 pos, float r){
 
     float total = 0;
 
-    vec2 roots;
-    int num = solveQuadratic(A, B, C, roots);
+    int index = int(vIndex);
 
-    vec2 vA = vec2(a, d), vB = vec2(b, e), vC = vec2(c, f);//vector A, B, C for cartesian quadratic bezier
-    vec2 p0 = vA *t0*t0+ vB *t0+ vC;//position 0
-    float theta0 = atan(p0.y, p0.x);
+    //iterate through beziers
+    int start = texelFetch(u_Atlas, index).x, end = texelFetch(u_Atlas, index +1).x;
+    mat4 transform = u_Mvp * u_Pose;
 
-    float dTheta0 = 2*A*t0+B;//tells us if theta is increasing or decreasing at t0
-    float d2Theta0 = d2(a, b, c, d, e, f, t0);
+    float R2 = r*r;
+    for (int i = start; i < end; i++) {
+        int j = i*6 + u_FontLen*4+u_FontLen+1;
 
-    if(num>0){
-        float ts1 = roots.x;//1st stationary t
-        vec2 ps1 = vA* ts1 * ts1 +vB* ts1 +vC;//1st stationary point
-        float thetaS1 = atan(ps1.y, ps1.x);//stationary point angle
-
-        float deltaTheta1 = thetaS1 -theta0;//relative theta from P0 to Ps1 unnormalized
-
-
-        deltaTheta1 = correctDeltaTheta(deltaTheta1, mix(dTheta0, d2Theta0, abs(dTheta0)<epsilon));
-        total += deltaTheta1;
-
-        if(num>1){
-            float ts2 = roots.y;//2nd stationary t
-            vec2 ps2 = vA*ts2*ts2+vB*ts2+vc;//2nd stationary point
-            float thetaS2 = atan(ps2.y, ps2.x);//angle of 2nd stationary point
-
-            float deltaTheta2 = thetaS1-thetaS1;//change in angle between 1st and 2nd stationary points
-            float d2Theta1 = d2(a, b, c, d, e, f, ts1);//second derivative of theta with respect to t at first stationary point
-            deltaTheta2 = correctDeltaTheta(deltaTheta2, d2Theta1);//corrected based on what direction theta is coming from
-            total += deltaTheta2;
-
-            theta0 = thetaS2;
-            p0 = ps2;
-            t0 = ts2;
-            dTheta0 = d2(a, b, c, d, e, f, ts2);
-        } else {
-            theta0 = thetaS1;
-            p0 = ps1;
-            t0 = ts1;
-            dTheta0 = d2(a, b, c, d, e, f, ts1);
+        float a, b, c, d, e, f;
+        {
+            vec2 A = (transform * vec4(u_EmScale * fetch(j), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+            vec2 B = (transform * vec4(u_EmScale * fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+            vec2 C = ((transform * vec4(u_EmScale * (fetch(j + 2) + vec2(vAdvance, 0)), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
+            C -= pos;
+            a = A.x;
+            b = B.x;
+            c = C.x;
+            d = A.y;
+            e = B.y;
+            f = C.y;
         }
+
+        int num = 8;
+        float dt = 1/(num*4.0);
+        vec4 off = vec4(0, num, num*2, num*3);
+
+        float delta = 0;
+
+        float i3 = d*b-a*e,
+                i2 = 2*(c*d-a*f),
+                i1 = e*c-b*f;
+
+        float k4 = a*a+d*d,
+        k3 = 2*(a*b+d*e),
+        k2 = 2*a*c+b*b+2*d*f+e*e,
+        k1 = 2*(b*c+e*f),
+        k0 = c*c+f*f;
+
+        for(int k = 0; k < num; k++) {
+            vec4 t = (off + vec4(k)) * dt;
+            vec4 t2 = t*t;
+            //vec4 t3 = t2*t;
+            //vec4 t4 = t3*t;
+            //vec4 r2 = k4*t4+k3*t3+k2*t2+k1*t;
+
+            vec4 x = a*t2+b*t+c,
+                    y = d*t2+e*t+f;
+
+            vec4 r2 = x*x+y*y;
+
+            vec4 dtheta = (i3*t*t+i2*t+i1)*dt;
+
+            delta += dot(mix(dtheta /R2, dtheta /r2, greaterThan(r2, vec4(R2))), vec4(1));
+        }
+        total += delta;
     }
-    vec2 p1 = vA*t1*t1+vB*t1+vC;
-    float theta1 = atan(p1.y,p1.x);
-    float deltaTheta1 = theta1-theta0;
-    deltaTheta1 = correctDeltaTheta(deltaTheta1, dTheta0);
-    total += deltaTheta1;
+
     return total;
 }
 
-vec2 fetch(int j){
-  return vec2(texelFetch(u_Atlas, j).x, texelFetch(u_Atlas, j+3).x);
-}
-
-float calcArea(vec2 o){
-  float total = 0;
-
-  int iGlyph = int(vGlyph);
-
-  //iterate through beziers
-  int start = texelFetch(u_Atlas, iGlyph).x, end = texelFetch(u_Atlas, iGlyph+1).x;
-  mat4 transform = u_Mvp * u_Pose;
-
-  for (int i = start; i < end; i++) {
-      float overlap = 0;
-      int j = i*6+257+256*4;
-
-      vec2 a = (transform*vec4(fetch(j), 0, 0)).xy*u_Viewport.zw/2;
-      vec2 b = (transform*vec4(fetch(j+1), 0, 0)).xy*u_Viewport.zw/2;
-      vec2 c = ((transform*vec4((fetch(j+2)+vec2(vAdvance, 0)), 0, 1)).xy+vec2(1,1))*u_Viewport.zw/2;
-
-      c = c-o;//move origin to pixel
-
-      //Polar quartic r2 = At4 + Bt3 + Ct2 + Dt + E
-      float A = a.x*a.x+a.y*a.y;
-      float B = 2*a.x*b.x+2*a.y*b.y;
-      float C = 2*a.x*c.x+b.x*b.x+2*a.y*c.y+b.y*b.y;
-      float D = 2*(b.x*c.x + b.x*a.y + b.y*c.y + c.y*a.y);
-      float E = c.x*c.x+c.y*c.y;
-      float r = R;
-
-      vec4 roots;
-      int count = solveQuartic(A, B, C, D, E-r*r, roots);//compute roots
-
-      float t0 = roots.x, t1 = roots.y;
-
-      float i1, i2, i3, i4, i5, i6, i7;//window integral coefficients
-      windowIntegralCoeff(a.x, b.x, c.x, a.y, b.y, c.y, i1, i2, i3, i4, i5, i6, i7);
-
-      overlap += integrateAngle();
-
-      if(count>0){
-
-      }
-
-
-
-
-  }
-  return total;
-}
-
 void main () {
-  vec2 gPos = (vScreenPos+vec2(1))*u_Viewport.zw/2;
+    vec2 pixelPos = (vScreenPos+vec2(1))*u_Viewport.zw/2/u_EmScale;
 
-  float area = calcArea(gPos);
-  area = abs(area);
-  area = area/(PI/4);//normalize
-  area = clamp(area, 0.0, 1.0);
-  //area = pow(area, 1/2.2);
-  color = vec4(u_Tint.rgb, area * u_Tint.a);
+    float r = R/u_EmScale;
+
+    float area = calcArea(pixelPos, r)/2/PI;
+
+    area = abs(area);
+    area = clamp(area, 0.0, 1.0);
+    color = vec4(u_Tint.rgb, area * u_Tint.a);
 }
-/*a = 15 * (D * D + A * A) * (A * E - B * D)/210;
-b = 35 * (A * D * D * F + A * A * A * F + A * D * E * E - B * D * D * E + A * A * B * E - C * D * D * D - A * A * C * D - A * B * B * D)/210;
-c = 21*(6 * A * D * E * F - B * D * D * F + 5 * A * A * B * F + A * E * E * E - B * D * E * E - 5 * C * D * D * E + A * A * C * E + A * B * B * E - 6 * A * B * C * D - B * B * B * D)/210;
-d = 105 * (A * F - C * D) * (D * F + E * E + A * C + B * B)/210;
-e = 35 * (5 * A * E * F * F + B * D * F * F + B * E * E * F - 6 * C * D * E * F + 6 * A * B * C * F + B * B * B * F - C * E * E * E - A * C * C * E - B * B * C * E - 2 * A * E - B * (5 * C * C - 2) * D)/210;
-f = 105 * (F * (A * F * F + B * E * F - C * D * F - C * E * E + A * C * C + B * B * C - 2 * A) - C * (B * C * E + C * C * D - 2 * D))/210;
-g = 105 * (B * F * F * F - 105 * C * E * F * F + 105 * B * (C * C - 2) * F - 105 * C * (C * C - 2) * E)/210;*/
-
-/*
-    if(dt<0 && area>0){
-        return 2*PI+dt;
-    }
-    if(dt>0 && area<0){
-        return dt-2*PI;
-    }*/

@@ -17,7 +17,7 @@ public class GlyphRenderer4 {
     ArrayList<float[]>[] quadratic;
 
     STBTTFontinfo fontinfo;
-    public int glyph=68;
+    public int codepoint =68;
 
     public GlyphRenderer4(Main main) {
         this.main = main;
@@ -128,7 +128,7 @@ public class GlyphRenderer4 {
         qx = qx - sx*aaRange/2;
         qy = qy - sy*aaRange/2;
 
-        ArrayList<float[]> glyph = this.quadratic[this.glyph];
+        ArrayList<float[]> glyph = this.quadratic[this.codepoint];
 
         for (float[] bezier : glyph) {
             float a, b, c;

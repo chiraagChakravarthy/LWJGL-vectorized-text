@@ -3,7 +3,6 @@ package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
-import org.joml.Vector4i;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
@@ -61,7 +60,7 @@ public class TextRenderer {
     }
 
     private static void initShaders() {
-        shader = createShader("/shader/text.vert", "/shader/text.frag");
+        shader = createShader("/shader/text.vert", "/shader/text5.frag");
 
         u_Atlas = glGetUniformLocation(shader, "u_Atlas");
         u_String = glGetUniformLocation(shader, "u_String");

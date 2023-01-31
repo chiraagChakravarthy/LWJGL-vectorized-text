@@ -1,10 +1,9 @@
 #version 330 core
 layout (location=0) out vec4 color;
-
+//best looking
 #define epsilon 0.0001
-#define R 0.7071067812
+#define R 1.414
 #define PI 3.1415926535
-//scaling factor of intersect window for pixel
 
 uniform isamplerBuffer u_Atlas;
 uniform vec4 u_Tint;
@@ -266,55 +265,48 @@ float calcArea(vec2 pos, float r){
     int start = texelFetch(u_Atlas, index).x, end = texelFetch(u_Atlas, index +1).x;
     mat4 transform = u_Mvp * u_Pose;
 
+    float R2 = r*r;
     for (int i = start; i < end; i++) {
         int j = i*6 + u_FontLen*4+u_FontLen+1;
 
-        float a, b, c, d, e, f;
-        {
-            vec2 A = (transform * vec4(u_EmScale * fetch(j), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
-            vec2 B = (transform * vec4(u_EmScale * fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
-            vec2 C = ((transform * vec4(u_EmScale * (fetch(j + 2) + vec2(vAdvance, 0)), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
-            C -= pos;
-            a = A.x;
-            b = B.x;
-            c = C.x;
-            d = A.y;
-            e = B.y;
-            f = C.y;
-        }
+        vec2 A = (transform * vec4(u_EmScale * fetch(j), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+        vec2 B = (transform * vec4(u_EmScale * fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+        vec2 C = ((transform * vec4(u_EmScale * (fetch(j + 2) + vec2(vAdvance, 0)), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
+        C -= pos;
+        float a = A.x,
+        b = B.x,
+        c = C.x,
+        d = A.y,
+        e = B.y,
+        f = C.y;
+
+
+        int num = 8;
+        float dt = 1/(num*4.0);
+        vec4 off = vec4(0, num, num*2, num*3);
+
+        float delta = 0;
+
+        float i3 = d*b-a*e,
+                i2 = 2*(c*d-a*f),
+                i1 = e*c-b*f;
 
         float k4 = a*a+d*d,
         k3 = 2*(a*b+d*e),
         k2 = 2*a*c+b*b+2*d*f+e*e,
         k1 = 2*(b*c+e*f),
-        k0 = c*c+f*f-r*r;
+        k0 = c*c+f*f;
 
-        vec4 roots = solveQuartic(k4, k3, k2, k1, k0);
-
-        float i3 = (d*b-a*e)*.5/3,
-        i2 = .5*(c*d-a*f),
-        i1 = .5*(e*c-b*f);
-
-        float ta = 0;
-        float tb = roots.x;
-        float delta = 0;
-        delta -= angleIntegrate(a, b, c, d, e, f, clamp(ta, 0, 1), clamp(tb, 0, 1));
-
-        ta = tb;
-        tb = roots[1];
-        delta -= windowIntegrate(i3, i2, i1, clamp(ta, 0, 1), clamp(tb, 0, 1), r);
-
-        ta = tb;
-        tb = roots[2];
-        delta -= angleIntegrate(a, b, c, d, e, f, clamp(min(roots[1], roots[3]), 0, 1), clamp(max(roots[0], roots[2]), 0, 1));
-
-        ta = tb;
-        tb = roots[3];
-        delta -= windowIntegrate(i3, i2, i1, clamp(ta, 0, 1), clamp(tb, 0, 1), r);
-
-        ta = tb;
-        tb = 1;
-        delta -= angleIntegrate(a, b, c, d, e, f, clamp(ta, 0, 1), clamp(tb, 0, 1));
+        for(int k = 0; k < num; k++) {
+            vec4 t = (off + vec4(k)) * dt;
+            vec4 t2 = t*t;
+            vec4 x = a*t2+b*t+c,
+                    y = d*t2+e*t+f;
+            vec4 r2 = x*x+y*y;
+            vec4 dtheta = (i3*t*t+i2*t+i1)*dt;
+            vec4 dA = (vec4(2)-r2/R2)*dtheta;
+            delta += dot(mix(dA/R2, dtheta /r2, greaterThan(r2, vec4(R2))), vec4(1));
+        }
         total += delta;
     }
 
@@ -326,7 +318,7 @@ void main () {
 
     float r = R/u_EmScale;
 
-    float area = calcArea(pixelPos, r)/PI/2;
+    float area = calcArea(pixelPos, r)/2/PI;
 
     area = abs(area);
     area = clamp(area, 0.0, 1.0);

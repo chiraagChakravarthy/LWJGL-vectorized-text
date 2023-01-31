@@ -12,7 +12,7 @@ TERMS:
 * VERTEX
     * we are given the glyph, corner, and glyph space advance
     * find the box in glyph space
-    * compute the box's center and find the right corner
+    * compute the box's center and find the corners
     * apply em scale to find vertices in em space
         - em space is standardized size
     * Apply pose, and mvp

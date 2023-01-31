@@ -38,6 +38,7 @@ vec2 solveQuadratic(float a, float b, float c){
     if(abs(a)<epsilon){
         if(abs(b)>epsilon){
             roots.x = -c/b;
+            float t = -c/b;
         }
     } else {
         float dis = b*b-4*a*c;
@@ -137,92 +138,15 @@ vec4 solveQuartic(float a, float b, float c, float d, float e){
 
     vec3 st = solveCubic(4*a, 3*b, 2*c, d);
     st = sort(st);
-    vec3 v = evalQuartic(a, b, c, d, e, vec4(st, 1)).xyz;
+
 
     vec4 t0 = vec4(st.x, st.x, st.z, st.z);
     vec4 t1 = vec4(0, st.y, st.y, 1);
     vec4 roots = seek(a, b, c, d, e, t0, t1);
 
+    vec3 v = evalQuartic(a, b, c, d, e, vec4(st, 1)).xyz;
     roots = mix(vec4(1), roots, bvec4(v.x<0, v.x<0&&v.y>0, v.z<0&&v.y>0, v.z<0));
     return roots;
-}
-
-int solveQuartic2(in float a, in float b, in float c, in float d, in float e, inout vec4 roots) {
-    roots = vec4(1);
-    b /= a; c /= a; d /= a; e /= a; // Divide by leading coefficient to make it 1
-
-    // Depress the quartic to x^4 + px^2 + qx + r by substituting x-b/4a
-    // This can be found by substituting x+u and the solving for the value
-    // of u that makes the t^3 term go away
-    float bb = b * b;
-    float p = (8.0 * c - 3.0 * bb) / 8.0;
-    float q = (8.0 * d - 4.0 * c * b + bb * b) / 8.0;
-    float r = (256.0 * e - 64.0 * d * b + 16.0 * c * bb - 3.0 * bb * bb) / 256.0;
-    int n = 0; // Root counter
-
-    // Solve for a root to (t^2)^3 + 2p(t^2)^2 + (p^2 - 4r)(t^2) - q^2 which resolves the
-    // system of equations relating the product of two quadratics to the depressed quartic
-    float ra = 2.0 * p;
-    float rb = p * p - 4.0 * r;
-    float rc = -q * q;
-
-    // Depress using the method above
-    float ru = ra / 3.0;
-    float rp = rb - ra * ru;
-    float rq = rc - (rb - 2.0 * ra * ra / 9.0) * ru;
-
-    float lambda;
-    float rh = 0.25 * rq * rq + rp * rp * rp / 27.0;
-    if (rh > 0.0) { // Use Cardano's formula in the case of one real root
-                    rh = sqrt(rh);
-                    float ro = -0.5 * rq;
-                    lambda = cbrt(ro - rh) + cbrt(ro + rh) - ru;
-    }
-
-    else { // Use complex arithmetic in the case of three real roots
-           float rm = sqrt(-rp / 3.0);
-           lambda = -2.0 * rm * sin(asin(1.5 * rq / (rp * rm)) / 3.0) - ru;
-    }
-
-    // Newton iteration to fix numerical problems (using Horners method)
-    // Suggested by @NinjaKoala
-    for (int i = 0; i < 2; i++) {
-        float a_2 = ra + lambda;
-        float a_1 = rb + lambda * a_2;
-        float b_2 = a_2 + lambda;
-
-        float f = rc + lambda * a_1; // Evaluation of λ^3 + ra * λ^2 + rb * λ + rc
-        float f1 = a_1 + lambda * b_2; // Derivative
-
-        lambda -= f / f1; // Newton iteration step
-    }
-
-    // Solve two quadratics factored from the quartic using the cubic root
-    if (lambda < 0.0) return n;
-    float t = sqrt(lambda); // Because we solved for t^2 but want t
-    float alpha = 2.0 * q / t, beta = lambda + ra;
-
-    float u = 0.25 * b;
-    t *= 0.5;
-
-    float z = -alpha - beta;
-    if (z > 0.0) {
-        z = sqrt(z) * 0.5;
-        float h = + t - u;
-        roots.xy = vec2(h - z, h + z);
-        n += 2;
-    }
-
-    float w = + alpha - beta;
-    if (w > 0.0) {
-        w = sqrt(w) * 0.5;
-        float h = -t - u;
-        roots.zw = vec2(h - w, h + w);
-        if (n == 0) roots.xy = roots.zw;
-        n += 2;
-    }
-
-    return n;
 }
 
 float angleIntegrate(float a, float b, float c, float d, float e, float f, float t0, float t1){
@@ -234,7 +158,7 @@ float angleIntegrate(float a, float b, float c, float d, float e, float f, float
     theta1 = atan(y1, x1);
     float diff = theta1-theta0;
     diff = mix(mix(diff, diff-2*PI, diff>PI), diff+2*PI, diff<-PI);
-    if(abs(diff)<.01f){
+    if(abs(diff)<1){
         return diff;//removes degenerate cases
     }
     float theta2 = theta0+diff/2;
@@ -247,12 +171,47 @@ float angleIntegrate(float a, float b, float c, float d, float e, float f, float
     float prod = dot(x2, vec2(sx, sy));
 
     if(prod>0){
-        return diff;
+        return diff;//short way
     }
-    //it took the long way round
 
+    //it took the long way round
     return mix(mix(diff, diff-2*PI, diff>0), diff+2*PI, diff<0);
     //if somehow a 0 diff manages to make it through here then there you go
+}
+
+vec2 quadApprox(float a, float b, float c, float d, float e, float t) {
+    //Q(t) = P(t)
+    //Q'(t) = P'(t)
+    //Q''(t) = P''(t)
+
+    float t2 = t*t;
+    float t3 = t2*t;
+    float t4 = t3*t;
+
+    //2A = d/dt (4at3+3bt2+2ct+d) = 12at2 + 6bt + 2c
+    float A = .5*(12*a*t2 + 6*b*t + 2*c);
+
+    //2At+B = 4at3+3bt2+2ct+d
+    //B = 4at3+3bt2+2ct+d-2At
+    float B = 4*a*t3+3*b*t2+2*(c-A)*t+d;
+
+    //at2+bt+c = at4+bt3+ct2+dt+e
+    //c = at4+bt3+ct2+dt+e-bt-at2
+    float C = a*t4+b*t3+(c-A)*t2+(d-B)*t+e;
+
+    return solveQuadratic(A, B, C);
+}
+
+vec4 solveQuartic3(float a, float b, float c, float d, float e){
+    if(abs(a)<epsilon){
+        return vec4(solveQuadratic(c, d, e), 1, 1);
+    }
+
+    vec3 stationary = sort(solveCubic(4*a, 3*b, 2*c, d));
+    vec4 roots = vec4(quadApprox(a, b, c, d, e, stationary.x), quadApprox(a, b, c, d, e, stationary.z));
+    vec3 v = evalQuartic(a, b, c, d, e, vec4(stationary, 1)).xyz;
+    roots = mix(vec4(1), roots, bvec4(v.x<0, v.x<0&&v.y>0, v.z<0&&v.y>0, v.z<0));
+    return roots;
 }
 
 
@@ -265,6 +224,7 @@ float calcArea(vec2 pos, float r){
     //iterate through beziers
     int start = texelFetch(u_Atlas, index).x, end = texelFetch(u_Atlas, index +1).x;
     mat4 transform = u_Mvp * u_Pose;
+    float R2 = r*r;
 
     for (int i = start; i < end; i++) {
         int j = i*6 + u_FontLen*4+u_FontLen+1;
@@ -287,9 +247,9 @@ float calcArea(vec2 pos, float r){
         k3 = 2*(a*b+d*e),
         k2 = 2*a*c+b*b+2*d*f+e*e,
         k1 = 2*(b*c+e*f),
-        k0 = c*c+f*f-r*r;
+        k0 = c*c+f*f-R2;
 
-        vec4 roots = solveQuartic(k4, k3, k2, k1, k0);
+        vec4 roots = solveQuartic3(k4, k3, k2, k1, k0);
 
         float i3 = (d*b-a*e)*.5/3,
         i2 = .5*(c*d-a*f),
@@ -306,7 +266,7 @@ float calcArea(vec2 pos, float r){
 
         ta = tb;
         tb = roots[2];
-        delta -= angleIntegrate(a, b, c, d, e, f, clamp(min(roots[1], roots[3]), 0, 1), clamp(max(roots[0], roots[2]), 0, 1));
+        delta -= angleIntegrate(a, b, c, d, e, f, clamp(ta, 0, 1), clamp(tb, 0, 1));
 
         ta = tb;
         tb = roots[3];

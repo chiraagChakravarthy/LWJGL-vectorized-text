@@ -46,9 +46,9 @@ public class Main extends Canvas implements Runnable, KeyListener, MouseListener
         instance = new Main();
     }
 
-    private GlyphRenderer4 test;
+    private GlyphRenderer7 test;
     private void start(){
-        test = new GlyphRenderer4(this);
+        test = new GlyphRenderer7(this);
     }
 
     public void run() {
@@ -128,7 +128,7 @@ public class Main extends Canvas implements Runnable, KeyListener, MouseListener
         BufferStrategy bs = getBufferStrategy();
         //Instead of drawing directly to the canvas, drawing to a buffer strategy allows for a concept called triple buffering
         if (bs == null) {
-            createBufferStrategy(3);
+            createBufferStrategy(2);
             //triple buffering in the long term greatly increases performance. Instead of replacing every pixel, triple buffering
             //only changes the pixels that weren't present before. It also searches for and remembers patterns in a single runtime
             //iteration.
@@ -161,10 +161,10 @@ public class Main extends Canvas implements Runnable, KeyListener, MouseListener
     public void mouseClicked(MouseEvent e) {
         //Irrelevant to program
         if(e.getButton()==0){
-            test.glyph++;
+            test.codepoint++;
         }
         if(e.getButton()==1){
-            test.glyph--;
+            test.codepoint--;
         }
     }
 
