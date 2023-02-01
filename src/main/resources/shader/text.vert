@@ -79,7 +79,6 @@ void main(){
     sG.xy += normalize(delta)/vec2(u_Viewport.z, u_Viewport.w)*2;
 
     gl_Position = sG;
-    gl_Position.z = 0;
     vScreenPos = sG.xy;
     vIndex = charIndex;
     vAdvance = advance;

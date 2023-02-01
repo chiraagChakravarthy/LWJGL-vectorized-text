@@ -11,7 +11,6 @@ uniform vec4 u_Tint;
 uniform float u_EmScale;
 uniform mat4 u_Mvp;
 uniform mat4 u_Pose;
-uniform mat4 u_Screen;
 uniform vec4 u_Viewport;
 uniform int u_FontLen;
 

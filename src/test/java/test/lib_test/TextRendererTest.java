@@ -59,16 +59,16 @@ public class TextRendererTest {
         }
         Vector4f color = new Vector4f(0,0,0,1);
 
-        TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
-        Matrix4f pose = new Matrix4f().translate(500, 300, 0).scale(120);
-        Matrix4f rotate = new Matrix4f().rotate((float) 0, 0, 1, 0);
-        pose.mul(rotate);
+        TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH/1000f, 0, HEIGHT/1000f, -1, 1));
+        Matrix4f pose = new Matrix4f().translate(.5f, .3f, 0).scale(.12f);
+        Matrix4f rotate = new Matrix4f().rotate((float) .01, 0, 0, 1);
         do {
+            pose.mul(rotate);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
             //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
             //completelyUnnecessaryObject.drawText("hello", pose, font, color);
-            completelyUnnecessaryObject.drawTextAligned("(hello there)", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, font, color);
+            completelyUnnecessaryObject.drawTextAligned("hello there", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
