@@ -8,6 +8,7 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.VectorFont;
 
+import static java.lang.Math.PI;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -51,24 +52,30 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/ariblk.ttf");
+        //VectorFont font = new VectorFont("/font/ariblk.ttf");
 
-        StringBuilder str = new StringBuilder();
-        for (int i = '!'; i < 155; i++) {
-            str.append((char) i);
-        }
+
+        int[][][] shapes = new int[][][]{
+                new int[][]{
+                        new int[]{100, -100, -100, 0, 200, 25},
+                        new int[]{-100, 100, 100, 0, -200, 225},
+                        new int[]{0, 200, -100, -100, 100, 225},
+                        new int[]{0, -200, 100, 100, -100, 25}
+                }
+        };
+        VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
+
         Vector4f color = new Vector4f(0,0,0,1);
 
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH/1000f, 0, HEIGHT/1000f, -1, 1));
-        Matrix4f pose = new Matrix4f().translate(.5f, .3f, 0).scale(.12f);
-        Matrix4f rotate = new Matrix4f().rotate((float) .01, 0, 0, 1);
+        Matrix4f pose = new Matrix4f().translate(.5f, .5f, 0).scale(.1f);
         do {
-            pose.mul(rotate);
+            pose.rotate(0.01f, 0, 0, 1);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
             //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
             //completelyUnnecessaryObject.drawText("hello", pose, font, color);
-            completelyUnnecessaryObject.drawTextAligned("hello there", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, font, color);
+            completelyUnnecessaryObject.drawTextAligned("o", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
