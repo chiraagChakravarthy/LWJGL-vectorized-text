@@ -25,6 +25,53 @@ public class VectorFont {
      * charIndex: the index of the character in the atlas
      */
 
+    public static VectorFont shapes;
+
+    static {
+        int[][] square = new int[][]{
+                new int[]{0, -1000, 1000, 0, 0, 0},
+                new int[]{0, 0, 0, 0, 1000, 0},
+                new int[]{0, 1000, 0, 0, 0, 1000},
+                new int[]{0, 0, 1000, 0, -1000, 1000}
+        };
+
+        int[][] triangle = new int[][]{
+                new int[]{0, -1000, 1000, 0, 0, 0},
+                new int[]{0, 500, 0, 0, 866, 0},
+                new int[]{0, 500, 500, 0, -866, 866}
+        };
+
+        int n = 8;
+        int[][] circle = new int[n][6];
+        float alpha = (float) (PI/n);
+        float r = 500;
+        float R = (float) (r/cos(alpha));
+
+        for (int i = 0; i < n; i++) {
+            int p1x = (int) round(r*sin(2*i*alpha)),
+                    p1y = (int) round(-r*cos(2*i*alpha)),
+                    p2x = (int) round(R*sin((2*i+1)*alpha)),
+                    p2y = (int) round(-R*cos((2*i+1)*alpha)),
+                    p3x = (int) round(r*sin((2*i+2)*alpha)),
+                    p3y = (int) round(-r*cos((2*i+2)*alpha));
+            int[] bezier = new int[]{
+                    p1x-2*p2x+p3x,
+                    2*p2x-2*p3x,
+                    p3x,
+                    p1y-2*p2y+p3y,
+                    2*p2y-2*p3y,
+                    p3y
+            };
+            circle[i] = bezier;
+        }
+
+        int[][][] shapes = new int[][][]{
+          square, triangle, circle
+        };
+
+        VectorFont.shapes = new VectorFont(shapes, new char[]{'s', 't', 'c'}, .001f);
+    }
+
     public static final String ASCII, DEFAULT;
 
     static {
@@ -59,9 +106,10 @@ public class VectorFont {
      *
      * @param shapes [shape1: [bezier1: [a, b, c, d, e, f], bezier2...], shape2...]
      * @param characters the characters associated with the provided shapes
-     * @param ascent the standard height of the font (for alignment purposes)
+     * @param scale since the bezier coeffecients are integers, the scale of the provided shapes may need to
+     *              grow quite large to accurately represent something. the provided scale can be set to counter this
      */
-    public VectorFont(int[][][] shapes, char[] characters, int ascent){
+    public VectorFont(int[][][] shapes, char[] characters, float scale){
         len = characters.length;
         indexMap = new HashMap<>();
         for (int i = 0; i < characters.length; i++) {
@@ -70,7 +118,7 @@ public class VectorFont {
         this.advance = new int[len];
         this.kern = new int[len*len];
         bounds = new int[len*4];
-        emScale = 1;
+        this.emScale = scale;
 
         atlas = genAtlas(shapes);
         int atlasBuffer = glGenBuffers();
@@ -81,7 +129,7 @@ public class VectorFont {
         glBindTexture(GL_TEXTURE_BUFFER, atlasTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
 
-        this.ascent = ascent;
+        this.ascent = 0;
     }
 
     public VectorFont(String path, String characters){
@@ -313,6 +361,7 @@ public class VectorFont {
                 glyph[k+4] = 2*by-2*cy;
                 glyph[k+5] = cy;
                 k += 6;
+
             } else if(type==2){
                 STBTTVertex nextVertex = glyphShape.get(j - 1);
                 int bx = nextVertex.x(), by = nextVertex.y();

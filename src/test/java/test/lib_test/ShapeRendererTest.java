@@ -2,6 +2,7 @@ package test.lib_test;
 
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
 import org.joml.Matrix4f;
+import org.joml.Random;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWKeyCallbackI;
@@ -53,27 +54,17 @@ public class ShapeRendererTest implements GLFWKeyCallbackI {
         glfwShowWindow(window);
     }
 
-    Matrix4f pose = new Matrix4f().translate(WIDTH/2F, HEIGHT/2F, 0).scale(1).rotate(.25f, 0, 0, 1);
+    Matrix4f pose = new Matrix4f().translate(WIDTH/2F, HEIGHT/2F, 0).scale(100).rotate(.25f, 0, 0, 1);
 
     private void render() {
-        //VectorFont font = new VectorFont("/font/ariblk.ttf");
-        int[][][] shapes = new int[][][]{
-                new int[][]{
-                        new int[]{100, -100, -100, 0, 200, 25},
-                        new int[]{-100, 100, 100, 0, -200, 225},
-                        new int[]{0, 200, -100, -100, 100, 225},
-                        new int[]{0, -200, 100, 100, -100, 25}
-                }
-        };
-        VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
-
         Vector4f color = new Vector4f(0,0,0,1);
 
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
         do {
             fps();
+            pose.rotate(1, 0, 0, 1);
             glClear(GL_COLOR_BUFFER_BIT);
-            completelyUnnecessaryObject.drawTextAligned("o", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
+            completelyUnnecessaryObject.drawTextAligned("c", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, VectorFont.shapes, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

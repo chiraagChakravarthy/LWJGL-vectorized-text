@@ -180,6 +180,7 @@ public class TextRenderer {
      * @param align where within the string is its 'position'
      *              (-1, -1): bottom left
      *              (1, 1) top right
+     *              (0, 0) centered
      * @param alignType align with the geometric string bounds, or with fixed height bounds
      * @param font typeface to render with
      * @param color rgba color (0,1)
