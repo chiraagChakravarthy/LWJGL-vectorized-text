@@ -136,7 +136,8 @@ float angleIntegrate(float a, float b, float c, float d, float e, float f, float
     float sx = cos(theta2),
     sy = sin(theta2);
     vec2 roots = interceptLineBezier(a, b, c, d, e, f, sx, sy);
-    float t2 = mix(roots.y, roots.x, roots.x<t1&&roots.x>t0);
+    float t12 = mix(t1, t0, 0.5);
+    float t2 = mix(roots.y, roots.x, abs(roots.y-t12)>abs(roots.x-t12));
 
     vec2 x2 = vec2(a,d)*t2*t2+vec2(b,e)*t2+vec2(c,f);
     float prod = dot(x2, vec2(sx, sy));

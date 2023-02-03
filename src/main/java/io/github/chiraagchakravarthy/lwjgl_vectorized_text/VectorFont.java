@@ -70,7 +70,7 @@ public class VectorFont {
         this.advance = new int[len];
         this.kern = new int[len*len];
         bounds = new int[len*4];
-        emScale = 1f;
+        emScale = 1;
 
         atlas = genAtlas(shapes);
         int atlasBuffer = glGenBuffers();
@@ -82,7 +82,6 @@ public class VectorFont {
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
 
         this.ascent = ascent;
-        System.out.println(Arrays.toString(atlas));
     }
 
     public VectorFont(String path, String characters){

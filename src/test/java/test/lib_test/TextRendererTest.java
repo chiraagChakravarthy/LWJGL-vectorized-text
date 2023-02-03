@@ -68,7 +68,7 @@ public class TextRendererTest {
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
         Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(800);
         do {
-            pose.rotate(3.1f, 0, 0, 1);
+
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
             completelyUnnecessaryObject.drawTextAligned("o", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);

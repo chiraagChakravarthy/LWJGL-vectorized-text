@@ -4,6 +4,7 @@ import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
+import org.lwjgl.glfw.GLFWKeyCallbackI;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.VectorFont;
@@ -12,7 +13,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public class ShapeRendererTest {
+public class ShapeRendererTest implements GLFWKeyCallbackI {
     private final int WIDTH = 1000;
     private final int HEIGHT = 700;
     private long window;
@@ -47,8 +48,12 @@ public class ShapeRendererTest {
         //glfwSetKeyCallback(window, new KeyInput()); // will use other key systems
 
         glClearColor(1,1,1, 1.0f);
+
+        glfwSetKeyCallback(window, this);
         glfwShowWindow(window);
     }
+
+    Matrix4f pose = new Matrix4f().translate(WIDTH/2F, HEIGHT/2F, 0).scale(1).rotate(.25f, 0, 0, 1);
 
     private void render() {
         //VectorFont font = new VectorFont("/font/ariblk.ttf");
@@ -65,12 +70,9 @@ public class ShapeRendererTest {
         Vector4f color = new Vector4f(0,0,0,1);
 
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
-        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(1);
         do {
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
-            //completelyUnnecessaryObject.drawText("hello", pose, font, color);
             completelyUnnecessaryObject.drawTextAligned("o", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
@@ -95,5 +97,22 @@ public class ShapeRendererTest {
 
     public static void main(String[] args) {
         new ShapeRendererTest().run();
+    }
+
+    boolean keyPressed = false;
+    int n = 0;
+    @Override
+    public void invoke(long window, int key, int scancode, int action, int mods) {
+        if(key==GLFW_KEY_E){
+            if(!keyPressed && action==GLFW_PRESS){
+                keyPressed = true;
+                pose.rotate(.01f, 0, 0, 1);
+                n++;
+                System.out.println(n);
+            }
+            if(keyPressed && action==GLFW_RELEASE){
+                keyPressed = false;
+            }
+        }
     }
 }
