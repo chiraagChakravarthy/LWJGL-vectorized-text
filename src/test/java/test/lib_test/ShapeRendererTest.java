@@ -1,18 +1,18 @@
 package test.lib_test;
 
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
-import io.github.chiraagchakravarthy.lwjgl_vectorized_text.VectorFont;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import io.github.chiraagchakravarthy.lwjgl_vectorized_text.VectorFont;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public class TextRendererTest {
+public class ShapeRendererTest {
     private final int WIDTH = 1000;
     private final int HEIGHT = 700;
     private long window;
@@ -60,17 +60,17 @@ public class TextRendererTest {
                         new int[]{0, -200, 100, 100, -100, 25}
                 }
         };
-        //VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
-        VectorFont font = new VectorFont();
+        VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
 
         Vector4f color = new Vector4f(0,0,0,1);
 
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
-        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(800);
+        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(1);
         do {
-            pose.rotate(3.1f, 0, 0, 1);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
+            //TextRenderer.drawText("hello", 10, 100f, font, 1000, color);
+            //completelyUnnecessaryObject.drawText("hello", pose, font, color);
             completelyUnnecessaryObject.drawTextAligned("o", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
@@ -94,6 +94,6 @@ public class TextRendererTest {
     }
 
     public static void main(String[] args) {
-        new TextRendererTest().run();
+        new ShapeRendererTest().run();
     }
 }

@@ -7,6 +7,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 import static io.github.chiraagchakravarthy.lwjgl_vectorized_text.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
@@ -198,8 +199,8 @@ public class TextRenderer {
             y1 = font.ascent;
         }
 
-        float cx = (x1-x0)/2f*font.emScale, cy = (y1-y0)/2f*font.emScale;
-        float dx = cx*(align.x+1), dy = cy*(align.y+1);
+        float cx = (x1-x0)/2f*font.emScale, cy = (y1-y0)/2f*font.emScale;//center of text in em space
+        float dx = cx*(align.x+1)+x0*font.emScale, dy = cy*(align.y+1)+y0*font.emScale;
         Vector4f oPos = pose.transform(new Vector4f());//translate component
         Vector4f cPos = pose.transform(new Vector4f(dx, dy, 0, 1));//center transformed
         pose = new Matrix4f().translate(oPos.x-cPos.x, oPos.y-cPos.y, oPos.z-cPos.z).mul(pose);

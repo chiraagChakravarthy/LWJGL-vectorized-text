@@ -70,7 +70,7 @@ public class VectorFont {
         this.advance = new int[len];
         this.kern = new int[len*len];
         bounds = new int[len*4];
-        emScale = .01f;
+        emScale = 1f;
 
         atlas = genAtlas(shapes);
         int atlasBuffer = glGenBuffers();
@@ -82,6 +82,7 @@ public class VectorFont {
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, atlasBuffer);
 
         this.ascent = ascent;
+        System.out.println(Arrays.toString(atlas));
     }
 
     public VectorFont(String path, String characters){
@@ -176,7 +177,6 @@ public class VectorFont {
             atlas[i+1] = curr;
             addBounds(atlas, i);
         }
-        System.out.println(Arrays.toString(atlas));
         return atlas;
     }
 
@@ -213,7 +213,8 @@ public class VectorFont {
             char codepoint = chars[i];
             if(glyph != null) {
                 System.arraycopy(glyph, 0, atlas, start*6+len+1+len*4, (end-start)*6);
-                addBounds(atlas, i, codepoint, font);
+                //addBounds(atlas, i, codepoint, font);
+                addBounds(atlas, i);
             }
         }
         return atlas;
@@ -267,8 +268,8 @@ public class VectorFont {
                     e = atlas[k+4],
                     f = atlas[k+5];
             //2at+b=0
-            float tx = a==0?0:-b/(2f*a),
-                    ty = d==0?0:-e/(2f*d),
+            float tx = a==0?0:clamp(-b/(2f*a)),
+                    ty = d==0?0:clamp(-e/(2f*d)),
                     pxx = a*tx*tx+b*tx+c,
                     pxy = d*tx*tx+e*tx+f,
                     pyx = a*ty*ty+b*ty+c,
@@ -281,7 +282,6 @@ public class VectorFont {
             minY = min(min(min(pxy, pyy), min(p0y, p1y)), minY);
             maxX = max(max(max(pxx, pyx), max(p0x, p1x)), maxX);
             maxY = max(max(max(pxy, pyy), max(p0y, p1y)), maxY);
-            System.out.println(d);
         }
         atlas[len+1+4*i]= (int) floor(minX);
         atlas[len+1+4*i+1] = (int) floor(minY);
@@ -291,6 +291,10 @@ public class VectorFont {
         bounds[4*i+1] = (int) floor(minY);
         bounds[4*i+2] = (int) ceil(maxX);
         bounds[4*i+3] = (int) ceil(maxY);
+    }
+
+    private float clamp(float t){
+        return min(max(t, 0), 1);
     }
 
     private static int extractGlyphShape(STBTTVertex.Buffer glyphShape, int count, int[] glyph) {
