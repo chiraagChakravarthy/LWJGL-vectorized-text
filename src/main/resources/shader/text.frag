@@ -198,21 +198,33 @@ float calcArea(vec2 pos, float r){
     mat4 transform = u_Mvp * u_Pose;
     float R2 = r*r;
 
+    vec2 minA = pos-vec2(r), maxA = pos+vec2(r);
+
     for (int i = start; i < end; i++) {
         int j = i*6 + u_FontLen*4+u_FontLen+1;
 
-        float a, b, c, d, e, f;
-        {
-            vec2 A = (transform * vec4(u_EmScale * fetch(j), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
-            vec2 B = (transform * vec4(u_EmScale * fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
-            vec2 C = ((transform * vec4(u_EmScale * (fetch(j + 2) + vec2(vAdvance, 0)), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
-            C -= pos;
-            a = A.x;
-            b = B.x;
-            c = C.x;
-            d = A.y;
-            e = B.y;
-            f = C.y;
+        vec2 A = (transform * vec4(u_EmScale * fetch(j), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+        vec2 B = (transform * vec4(u_EmScale * fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+        vec2 C = ((transform * vec4(u_EmScale * (fetch(j + 2) + vec2(vAdvance, 0)), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
+        C -= pos;
+        float a = A.x;
+        float b = B.x;
+        float c = C.x;
+        float d = A.y;
+        float e = B.y;
+        float f = C.y;
+
+        float tx = clamp(mix(-b/(2*a), 0, abs(a)<epsilon), 0, 1);
+        float ty = clamp(mix(-e/(2*d), 0, abs(d)<epsilon), 0, 1);
+        vec2 p0 = C,
+                p1 = A+B+C,
+                px = A*tx*tx+B*tx+C,
+                py = A*ty*ty+B*ty+C;
+        vec2 minB = min(min(p0, p1), min(px, py))+pos,
+        maxB = max(max(p0, p1), max(px, py))+pos;
+        if(!(all(lessThan(minA, maxB))&&all(lessThan(minB, maxA)))){
+            total -= angleIntegrate(a, b, c, d, e, f, 0, 1);
+            continue;
         }
 
         float k4 = a*a+d*d,

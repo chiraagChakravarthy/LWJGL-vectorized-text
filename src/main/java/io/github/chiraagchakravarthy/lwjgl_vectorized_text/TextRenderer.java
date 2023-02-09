@@ -7,7 +7,6 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 import static io.github.chiraagchakravarthy.lwjgl_vectorized_text.FileUtil.readFile;
 import static org.lwjgl.opengl.GL11.GL_FALSE;

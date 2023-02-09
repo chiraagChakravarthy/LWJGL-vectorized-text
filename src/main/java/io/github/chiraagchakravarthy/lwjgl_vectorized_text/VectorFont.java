@@ -257,10 +257,8 @@ public class VectorFont {
         for(int i = 0; i < glyphs.length; i++){
             int[] glyph = glyphs[i];
             int start = index[i], end = index[i+1];
-            char codepoint = chars[i];
             if(glyph != null) {
                 System.arraycopy(glyph, 0, atlas, start*6+len+1+len*4, (end-start)*6);
-                //addBounds(atlas, i, codepoint, font);
                 addBounds(atlas, i);
             }
         }
@@ -281,22 +279,6 @@ public class VectorFont {
             this.advance[i] = advance[0];
         }
     }
-
-    private void addBounds(int[] atlas, int i, char codepoint, STBTTFontinfo font) {
-        int[] x0a = new int[1], x1a = new int[1], y0a = new int[1], y1a = new int[1];
-        stbtt_GetCodepointBox(font, codepoint, x0a, y0a, x1a, y1a);
-        int x0 = x0a[0], x1 = x1a[0], y0 = y0a[0], y1 = y1a[0];
-        bounds[i*4] = x0;
-        bounds[i*4+1] = y0;
-        bounds[i*4+2] = x1;
-        bounds[i*4+3] = y1;
-        atlas[len+1 + i*4] = x0;
-        atlas[len+1 + i*4+1] = y0;
-        atlas[len+1 + i*4+2] = x1;
-        atlas[len+1 + i*4+3] = y1;
-    }
-
-    private static final float epsilon = .00001f;
 
     private void addBounds(int[] atlas, int i){
         int start = atlas[i],

@@ -3,6 +3,7 @@ package test.lib_test;
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.TextRenderer;
 import io.github.chiraagchakravarthy.lwjgl_vectorized_text.VectorFont;
 import org.joml.Matrix4f;
+import org.joml.Random;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -52,26 +53,18 @@ public class TextRendererTest {
 
     private void render() {
         //VectorFont font = new VectorFont("/font/ariblk.ttf");
-        int[][][] shapes = new int[][][]{
-                new int[][]{
-                        new int[]{100, -100, -100, 0, 200, 25},
-                        new int[]{-100, 100, 100, 0, -200, 225},
-                        new int[]{0, 200, -100, -100, 100, 225},
-                        new int[]{0, -200, 100, 100, -100, 25}
-                }
-        };
+
         //VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
-        VectorFont font = new VectorFont();
+        VectorFont font = new VectorFont("/font/PAPYRUS.ttf");
 
         Vector4f color = new Vector4f(0,0,0,1);
 
-        TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1, 1));
-        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(800);
+        TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1000, 1000));
+        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(400);
         do {
-
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            completelyUnnecessaryObject.drawTextAligned("o", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
+            completelyUnnecessaryObject.drawTextAligned("hello", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));
