@@ -41,7 +41,7 @@ public class TextRendererTest {
         glfwMakeContextCurrent(window);
         GL.createCapabilities();
         System.out.println("Using GL Version: " + glGetString(GL_VERSION));
-
+        //glfwSwapInterval(0);
         // Open a window and create its OpenGL context
         GLFWVidMode vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         glfwSetWindowPos(window, (vidMode.width() - WIDTH) / 2, (vidMode.height() - HEIGHT) / 2);
@@ -55,16 +55,18 @@ public class TextRendererTest {
         //VectorFont font = new VectorFont("/font/ariblk.ttf");
 
         //VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
-        VectorFont font = new VectorFont("/font/PAPYRUS.ttf");
+        VectorFont font = new VectorFont("/font/arial.ttf", VectorFont.DEFAULT);
 
         Vector4f color = new Vector4f(0,0,0,1);
 
         TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1000, 1000));
-        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(400);
+        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(500);
         do {
+            pose.scale(1.001f);
+            //pose.rotate(.05f, 0.5773502692f, 0.5773502692f, 0.5773502692f);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            completelyUnnecessaryObject.drawTextAligned("hello", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
+            completelyUnnecessaryObject.drawTextAligned("e", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

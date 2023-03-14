@@ -60,7 +60,7 @@ public class TextRenderer {
     }
 
     private static void initShaders() {
-        shader = createShader("/shader/text.vert", "/shader/text.frag");
+        shader = createShader("/shader/text.vert", "/shader/text3.frag");
 
         u_Atlas = glGetUniformLocation(shader, "u_Atlas");
         u_String = glGetUniformLocation(shader, "u_String");
