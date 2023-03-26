@@ -60,7 +60,7 @@ public class TextRenderer {
     }
 
     private static void initShaders() {
-        shader = createShader("/shader/text.vert", "/shader/text3.frag");
+        shader = createShader("/shader/text.vert", "/shader/text.frag");
 
         u_Atlas = glGetUniformLocation(shader, "u_Atlas");
         u_String = glGetUniformLocation(shader, "u_String");
@@ -271,7 +271,12 @@ public class TextRenderer {
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, stringBuffer);
+        long last = System.nanoTime();
         glBufferSubData(GL_ARRAY_BUFFER, 0, data);
+        long now = System.nanoTime();
+        if(now-last>1000000){
+            System.out.println(now-last);
+        }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         int x0 = font.bound(codepoints[0], 0);

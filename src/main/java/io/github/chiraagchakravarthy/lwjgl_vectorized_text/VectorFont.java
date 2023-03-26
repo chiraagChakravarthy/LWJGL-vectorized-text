@@ -1,12 +1,15 @@
 package io.github.chiraagchakravarthy.lwjgl_vectorized_text;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTTVertex;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import static io.github.chiraagchakravarthy.lwjgl_vectorized_text.FileUtil.readFile;
 import static java.lang.Math.*;
 import static org.lwjgl.opengl.GL11.glBindTexture;
 import static org.lwjgl.opengl.GL11.glGenTextures;
@@ -86,6 +89,17 @@ public class VectorFont {
         DEFAULT = b.toString();
     }
 
+    public static STBTTFontinfo loadFont(String font) throws IOException {
+        byte[] bytes = readFile(font);
+
+        ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
+        buffer = (ByteBuffer) buffer.put(bytes).flip();
+
+        STBTTFontinfo fontinfo = STBTTFontinfo.create();
+        stbtt_InitFont(fontinfo, buffer);
+        return fontinfo;
+    }
+
     private final HashMap<Character, Integer> indexMap;//maps codepoints to their index in the atlas
     protected final float emScale;
 
@@ -135,7 +149,7 @@ public class VectorFont {
     public VectorFont(String path, String characters){
         STBTTFontinfo font;
         try {
-            font = FileUtil.loadFont(path);
+            font = loadFont(path);
         } catch (IOException e) {
             throw new RuntimeException("Could not find font at \"" + path + "\"");
         }
@@ -222,6 +236,7 @@ public class VectorFont {
                 curr++;
             }
             atlas[i+1] = curr;
+            correctOrientation(atlas,i);
             addBounds(atlas, i);
         }
         return atlas;
@@ -260,6 +275,7 @@ public class VectorFont {
             if(glyph != null) {
                 System.arraycopy(glyph, 0, atlas, start*6+len+1+len*4, (end-start)*6);
                 addBounds(atlas, i);
+                correctOrientation(atlas,i);
             }
         }
         return atlas;
@@ -357,6 +373,47 @@ public class VectorFont {
             }
         }
         return k/6;
+    }
+
+    private void correctOrientation(int[] atlas, int i){
+        int start = atlas[i],
+                end = atlas[i+1];
+        float totalArea = 0;
+        for (int j = start; j < end; j++) {
+            int k = j * 6 + len * 5 + 1;
+            int a = atlas[k],
+                    b = atlas[k + 1],
+                    c = atlas[k + 2],
+                    d = atlas[k + 3],
+                    e = atlas[k + 4],
+                    f = atlas[k + 5];
+            //integral of y(t)x'(t)dt
+            //(dt2+et+f)(2at+b)
+            //2adt3 + 2aet2 + 2aft + bdt2 + ebt + fb
+            //1/2 adt4 + 1/3 (2ae+bd)t3 + 1/2(2af+be)t2 + fbt
+            totalArea += .5f*a*d + 1/3f*(2*a*e+b*d) + .5f*(2*a*f+b*e) + f*b;
+        }
+        if(totalArea < 0){
+            for (int j = start; j < end; j++) {
+                int k = j * 6 + len * 5 + 1;
+                int a = atlas[k],
+                        b = atlas[k + 1],
+                        c = atlas[k + 2],
+                        d = atlas[k + 3],
+                        e = atlas[k + 4],
+                        f = atlas[k + 5];
+
+                //a(1-t)2+b(1-t)+c
+                //a(1-2t+t2)+b(1-t)+c
+                //a-2at+at2+b-bt+c
+                //t2 (a) + t(-2a-b) + a+b+c
+
+                atlas[k+1] = -2*a-b;
+                atlas[k+2] = a+b+c;
+                atlas[k+4] = -2*d-e;
+                atlas[k+5] = d+e+f;
+            }
+        }
     }
 
     public int bound(char codepoint, int i) {

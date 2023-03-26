@@ -52,10 +52,10 @@ public class TextRendererTest {
     }
 
     private void render() {
-        //VectorFont font = new VectorFont("/font/ariblk.ttf");
+        VectorFont font = new VectorFont("/font/ariblk.ttf");
 
         //VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
-        VectorFont font = new VectorFont("/font/arial.ttf", VectorFont.DEFAULT);
+        //VectorFont font = new VectorFont("/font/arial.ttf", VectorFont.DEFAULT);
 
         Vector4f color = new Vector4f(0,0,0,1);
 
@@ -66,7 +66,7 @@ public class TextRendererTest {
             //pose.rotate(.05f, 0.5773502692f, 0.5773502692f, 0.5773502692f);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            completelyUnnecessaryObject.drawTextAligned("e", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
+            completelyUnnecessaryObject.drawTextAligned(")", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

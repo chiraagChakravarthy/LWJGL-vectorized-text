@@ -11,16 +11,6 @@ import java.nio.ByteBuffer;
 import static org.lwjgl.stb.STBTruetype.stbtt_InitFont;
 
 class FileUtil {
-    public static STBTTFontinfo loadFont(String font) throws IOException {
-        byte[] bytes = readFile(font);
-
-        ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
-        buffer = (ByteBuffer) buffer.put(bytes).flip();
-
-        STBTTFontinfo fontinfo = STBTTFontinfo.create();
-        stbtt_InitFont(fontinfo, buffer);
-        return fontinfo;
-    }
 
     public static byte[] readFile(String font) throws IOException {
         InputStream input = FileUtil.class.getResourceAsStream(font);
