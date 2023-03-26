@@ -49,7 +49,7 @@ publishing {
 		mavenJava(MavenPublication) {
 			groupId = 'io.github.chiraagchakravarthy'
 			artifactId = 'lwjgl-vectorized-text'
-			version = "0.0.4-SNAPSHOT"
+			version = "0.0.3"
 			from components.java
 
 			pom {
@@ -82,7 +82,7 @@ publishing {
 						password = "$ossrhPassword"
 					}
 
-					url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+					url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
 				}
 			}
 		}
