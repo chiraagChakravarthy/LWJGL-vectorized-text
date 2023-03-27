@@ -22,9 +22,9 @@ repositories {
 }
 
 dependencies {
-    implementation "io.github.chiraagchakravarthy:lwjgl-vectorized-text:0.0.2-SNAPSHOT"
+    implementation "io.github.chiraagchakravarthy:lwjgl-vectorized-text:0.0.3"
 }
 ```
-Then resync your gradle project. It will automatically download all the needed lwjgl dependencies if they are not present. There is a version of this project (0.0.1) in maven central, but it is nonfunctional so do not use it.
+Then resync your gradle project. It will automatically download all the needed lwjgl dependencies if they are not present.
 
 If your project does not have gradle, you can download the jar library from the releases page and add it to your project's classpath.
