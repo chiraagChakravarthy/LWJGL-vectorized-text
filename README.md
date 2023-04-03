@@ -9,8 +9,6 @@ To render plain 2D text, use ```TextRenderer.drawText2D()```. This takes a strin
 
 ```TextRenderer``` will render to the currently bound framebuffer (which is the window by default), and use the viewport width and height to scale and position the text (window width and height by default). **Important:** If you bind a framebuffer with different dimensions from the window, you must use ```glViewport``` to specify the new width and height before rendering, otherwise the text may be warped and antialiasing will fail.
 
-To render text in a different color, use ```TextRenderer.fillColor()```, which accepts red, green, blue, and alpha values ranged [0,1]. This will be opaque black by default.
-
 ## Add to your project
 If you have a gradle project, open your ```build.gradle``` and add the following
 
