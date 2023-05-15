@@ -40,26 +40,22 @@ TERMS:
 #define padding 2
 
 layout(location=0) in ivec2 glyphCorner;//which corner
-layout(location=1) in int stringIndex;//which character in the string to render
+layout(location=1) in mat4 transform; //instance
+layout(location=5) in int charIndex;//which character in the string to render (instance)
+layout(location=6) in vec4 tint;//color (instance)
 
-uniform mat4 u_Mvp;//translates 3d world space -> screen space
-uniform float u_EmScale;
-uniform mat4 u_Pose;//translates em space -> 3d world space
+uniform isamplerBuffer u_Atlas;//the atlas for the font
 uniform vec4 u_Viewport;
 uniform int u_FontLen;
 
-uniform isamplerBuffer u_Atlas;//the atlas for the font
-uniform isamplerBuffer u_String;//the characters and their advances
-
 out vec2 vScreenPos;//the screen space position
 out float vIndex;//index of the character being rendered
-out float vAdvance;//the advance in glyph space
+out vec4 vTint;
+out mat4 vTransform;
 
 
 //compute glyph space min and max point
 void main(){
-    int charIndex = texelFetch(u_String, stringIndex *2).x;
-    int advance = texelFetch(u_String, stringIndex *2+1).x;
 
     int j = charIndex*4 + u_FontLen +1;
 
@@ -69,11 +65,9 @@ void main(){
     vec2 g = mix(minG, maxG, glyphCorner);
     vec2 center = mix(minG, maxG, 0.5);
 
-    g += vec2(advance, 0);
-    vec4 sG = u_Mvp * u_Pose * vec4(u_EmScale * g, 0, 1);//convert to em space, then world space, then screen space
+    vec4 sG = transform * vec4(g, 0, 1);//convert to em space, then world space, then screen space
 
-    center += vec2(advance, 0);;
-    vec4 sCenter = u_Mvp * u_Pose * vec4(u_EmScale * center, 0, 1);
+    vec4 sCenter = transform * vec4(center, 0, 1);
 
     vec2 delta = (sG - sCenter).xy;
     sG.xy += normalize(delta)/vec2(u_Viewport.z, u_Viewport.w)*2;
@@ -81,5 +75,6 @@ void main(){
     gl_Position = sG;
     vScreenPos = sG.xy;
     vIndex = charIndex;
-    vAdvance = advance;
+    vTint = tint;
+    vTransform = transform;
 }

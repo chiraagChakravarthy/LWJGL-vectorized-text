@@ -49,7 +49,7 @@ publishing {
 		mavenJava(MavenPublication) {
 			groupId = 'io.github.chiraagchakravarthy'
 			artifactId = 'lwjgl-vectorized-text'
-			version = "0.0.3"
+			version = "0.0.5-SNAPSHOT"
 			from components.java
 
 			pom {
@@ -72,7 +72,7 @@ publishing {
 				scm {
 					connection = "scm:git:git://github.com/chiraagChakravarthy/LWJGL-vectorized-text.git"
 					developerConnection = "scm:git:ssh://github.com:chiraagChakravarthy/LWJGL-vectorized-text.git"
-					url = "https://github.com/chiraagChakravarthy/LWJGL-vectorized-text"
+					url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 				}
 			}
 			repositories {

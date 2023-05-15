@@ -52,21 +52,27 @@ public class TextRendererTest {
     }
 
     private void render() {
-        VectorFont font = new VectorFont("/font/ariblk.ttf");
+        Vector4f color = new Vector4f(1,0,1,1);
 
-        //VectorFont font = new VectorFont(shapes, new char[]{'o'}, 100);
-        //VectorFont font = new VectorFont("/font/arial.ttf", VectorFont.DEFAULT);
+        TextRenderer textRenderer = new TextRenderer();
 
-        Vector4f color = new Vector4f(0,0,0,1);
+        Matrix4f mvp = new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1000, 1000);
+        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(200);
 
-        TextRenderer completelyUnnecessaryObject = new TextRenderer(new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1000, 1000));
-        Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(500);
         do {
-            pose.scale(1.001f);
-            //pose.rotate(.05f, 0.5773502692f, 0.5773502692f, 0.5773502692f);
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            completelyUnnecessaryObject.drawTextAligned(")", pose, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, font, color);
+            Random random = new Random();
+            for (int i = 0; i < 200; i++) {
+                Matrix4f pose2 = new Matrix4f(pose);
+                pose2.mul(new Matrix4f().translate(random.nextFloat()*10-5, random.nextFloat()*10-5, 0));
+
+                textRenderer.drawText(Math.random() + "", pose2, mvp, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, color);
+                textRenderer.drawText2D(Math.random() + "", (float)Math.random()*WIDTH, (float)Math.random()*HEIGHT, 10, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, new Vector4f(0, 0, 0, 1));
+            }
+
+            textRenderer.render();
+
             glfwSwapBuffers(window); // Update Window
             glfwPollEvents(); // Key Mouse Input
         } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window));

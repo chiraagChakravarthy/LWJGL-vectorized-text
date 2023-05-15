@@ -7,10 +7,8 @@ layout (location=0) out vec4 color;
 //scaling factor of intersect window for pixel
 
 uniform isamplerBuffer u_Atlas;
-uniform vec4 u_Tint;
 uniform float u_EmScale;
 uniform mat4 u_Mvp;
-uniform mat4 u_Pose;
 uniform vec4 u_Viewport;
 uniform int u_FontLen;
 
@@ -19,7 +17,8 @@ uniform int u_FontLen;
 
 in vec2 vScreenPos;//position in screen space
 in float vIndex;//which glyph to render
-in float vAdvance;
+in mat4 vTransform;
+in vec4 vTint;
 
 vec2 fetch(int j){
     return  vec2(texelFetch(u_Atlas, j).x, texelFetch(u_Atlas, j+3).x);
@@ -195,7 +194,6 @@ float calcArea(vec2 pos, float r){
 
     //iterate through beziers
     int start = texelFetch(u_Atlas, index).x, end = texelFetch(u_Atlas, index +1).x;
-    mat4 transform = u_Mvp * u_Pose;
     float R2 = r*r;
 
     vec2 minA = pos-vec2(r), maxA = pos+vec2(r);
@@ -203,9 +201,9 @@ float calcArea(vec2 pos, float r){
     for (int i = start; i < end; i++) {
         int j = i*6 + u_FontLen*4+u_FontLen+1;
 
-        vec2 A = (transform * vec4(u_EmScale * fetch(j), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
-        vec2 B = (transform * vec4(u_EmScale * fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
-        vec2 C = ((transform * vec4(u_EmScale * (fetch(j + 2) + vec2(vAdvance, 0)), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
+        vec2 A = (vTransform * vec4(fetch(j), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+        vec2 B = (vTransform * vec4(fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
+        vec2 C = ((vTransform * vec4(fetch(j + 2), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
         C -= pos;
         float a = A.x;
         float b = B.x;
@@ -272,6 +270,6 @@ void main () {
 
     float area = calcArea(pixelPos, r)/PI/2;
 
-
-    color = vec4(u_Tint.rgb, area * u_Tint.a);
+    color = vec4(vTint.rgb, area);
+    //color = vec4(1, 0, 0, 1);
 }

@@ -28,52 +28,7 @@ public class VectorFont {
      * charIndex: the index of the character in the atlas
      */
 
-    public static VectorFont shapes;
 
-    static {
-        int[][] square = new int[][]{
-                new int[]{0, -1000, 1000, 0, 0, 0},
-                new int[]{0, 0, 0, 0, 1000, 0},
-                new int[]{0, 1000, 0, 0, 0, 1000},
-                new int[]{0, 0, 1000, 0, -1000, 1000}
-        };
-
-        int[][] triangle = new int[][]{
-                new int[]{0, -1000, 1000, 0, 0, 0},
-                new int[]{0, 500, 0, 0, 866, 0},
-                new int[]{0, 500, 500, 0, -866, 866}
-        };
-
-        int n = 8;
-        int[][] circle = new int[n][6];
-        float alpha = (float) (PI/n);
-        float r = 500;
-        float R = (float) (r/cos(alpha));
-
-        for (int i = 0; i < n; i++) {
-            int p1x = (int) round(r*sin(2*i*alpha)),
-                    p1y = (int) round(-r*cos(2*i*alpha)),
-                    p2x = (int) round(R*sin((2*i+1)*alpha)),
-                    p2y = (int) round(-R*cos((2*i+1)*alpha)),
-                    p3x = (int) round(r*sin((2*i+2)*alpha)),
-                    p3y = (int) round(-r*cos((2*i+2)*alpha));
-            int[] bezier = new int[]{
-                    p1x-2*p2x+p3x,
-                    2*p2x-2*p3x,
-                    p3x,
-                    p1y-2*p2y+p3y,
-                    2*p2y-2*p3y,
-                    p3y
-            };
-            circle[i] = bezier;
-        }
-
-        int[][][] shapes = new int[][][]{
-          square, triangle, circle
-        };
-
-        VectorFont.shapes = new VectorFont(shapes, new char[]{'s', 't', 'c'}, .001f);
-    }
 
     public static final String ASCII, DEFAULT;
 
