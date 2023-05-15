@@ -270,6 +270,5 @@ void main () {
 
     float area = calcArea(pixelPos, r)/PI/2;
 
-    color = vec4(vTint.rgb, area);
-    //color = vec4(1, 0, 0, 1);
+    color = vec4(vTint.rgb, area*vTint.a);
 }

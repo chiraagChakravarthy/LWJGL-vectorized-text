@@ -130,8 +130,6 @@ public class TextRenderer {
         }
     }
 
-    private final int[] temp = new int[MAX_LEN];
-
     public void drawText2D(String text, float x, float y, float pxScale, Vector2f align, TextBoundType alignType, Vector4f color){
         if(text.isEmpty()){
             return;
