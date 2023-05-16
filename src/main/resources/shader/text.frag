@@ -33,7 +33,7 @@ vec4 evalQuartic(float a, float b, float c, float d, float e, vec4 t){
 
 vec2 solveQuadratic(float a, float b, float c){
     float dis = b*b-4*a*c;
-    vec2 roots =  mix(mix(vec2(2), vec2(-c/b, 2), abs(b)>epsilon), mix(vec2(2), (vec2(-b)+vec2(sqrt(dis))*vec2(-1, 1))/(2*a), dis>=0), abs(a)>epsilon);
+    vec2 roots =  mix(mix(vec2(2), vec2(-c/b, 2), bvec2(abs(b)>epsilon)), mix(vec2(2), (vec2(-b)+vec2(sqrt(dis))*vec2(-1, 1))/(2*a), bvec2(dis>=0)), bvec2(abs(a)>epsilon));
     return vec2(min(roots.x, roots.y), max(roots.x, roots.y));
 }
 
@@ -66,7 +66,7 @@ vec3 solveCubic(float a, float b, float c){
         float cbrtq = cbrt(-q),
                 r = cbrt(-q+sqrt(D)),
                 s = cbrt(-q-sqrt(D));
-        roots = mix(vec3(r+s, 1, 1), vec3(2*cbrtq, -cbrtq, 1), D==0);
+        roots = mix(vec3(r+s, 1, 1), vec3(2*cbrtq, -cbrtq, 1), bvec3(D==0));
     } else {
         float ang = acos(-q/sqrt(-p*p*p)),
         r = 2*sqrt(-p);
@@ -239,5 +239,4 @@ void main () {
     float area = calcArea(pixelPos, r)/PI/2;
 
     color = vec4(vTint.rgb, area*vTint.a);
-    //color = vec4(1, 0, 0, 1);
 }

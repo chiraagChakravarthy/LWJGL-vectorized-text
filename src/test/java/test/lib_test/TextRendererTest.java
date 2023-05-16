@@ -15,8 +15,8 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class TextRendererTest {
-    private final int WIDTH = 1000;
-    private final int HEIGHT = 700;
+    private final int WIDTH = 1300;
+    private final int HEIGHT = 1000;
     private long window;
 
     public void run() {
@@ -65,7 +65,7 @@ public class TextRendererTest {
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
             for (int i = 0; i < 1; i++) {
-                textRenderer.drawText2D("(wtaf)", 500, 500, 300, TextRenderer.ALIGN_MIDDLE, TextRenderer.TextBoundType.BASELINE, color);
+                textRenderer.drawText2D("(wtaf)", 500, 500, 700, TextRenderer.ALIGN_MIDDLE, TextRenderer.TextBoundType.BASELINE, color);
             }
             textRenderer.render();
 
