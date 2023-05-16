@@ -46,9 +46,9 @@ public class Main extends Canvas implements Runnable, KeyListener, MouseListener
         instance = new Main();
     }
 
-    private GlyphRenderer7 test;
+    private GlyphRenderer4 test;
     private void start(){
-        test = new GlyphRenderer7(this);
+        test = new GlyphRenderer4(this);
     }
 
     public void run() {

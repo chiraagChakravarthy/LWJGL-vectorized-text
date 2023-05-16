@@ -37,11 +37,11 @@ vec2 solveQuadratic(float a, float b, float c){
     return vec2(min(roots.x, roots.y), max(roots.x, roots.y));
 }
 
-vec2 intersectLineBezier(float a, float b, float c, float d, float e, float f, float sx, float sy){
+vec2 interceptLineBezier(float a, float b, float c, float d, float e, float f, float sx, float sy){
     float A = a*sy-d*sx,
     B = b*sy-e*sx,
     C = c*sy-f*sx;
-    return solveQuadratic(A, B, C);
+    return solveQuadratic(A, B, C);//At2+Bt+C=0
 }
 
 float cbrt(float v){
@@ -56,17 +56,26 @@ float windowIntegrate(float a, float b, float c, float ta, float tb, float r){
     return (a*t3+b*t2+c*t1)/r/r;
 }
 
-vec3 solveCubic(float a, float b, float c){
+vec3 solveCubic(float d, float a, float b, float c){
+    a = a/d;
+    b = b/d;
+    c = c/d;
+
     float p = b/3-a*a/9;
     float q = a*a*a/27-a*b/6+c/2;
     float D = p*p*p+q*q;
     vec3 roots = vec3(1);
 
     if(D>=0){
-        float cbrtq = cbrt(-q),
-                r = cbrt(-q+sqrt(D)),
-                s = cbrt(-q-sqrt(D));
-        roots = mix(vec3(r+s, 1, 1), vec3(2*cbrtq, -cbrtq, 1), D==0);
+        if(D==0){
+            float r = cbrt(-q);
+            roots.x = 2*r;
+            roots.y = -r;
+        } else {
+            float r = cbrt(-q+sqrt(D)),
+            s = cbrt(-q-sqrt(D));
+            roots.x = r+s;
+        }
     } else {
         float ang = acos(-q/sqrt(-p*p*p)),
         r = 2*sqrt(-p);
@@ -77,6 +86,24 @@ vec3 solveCubic(float a, float b, float c){
 
     roots -= vec3(a/3);
     return roots;
+}
+
+// Solve cubic equation for roots
+vec3 solveCubic2(float a, float b, float c)
+{
+    float p = b - a*a / 3.0, p3 = p*p*p;
+    float q = a * (2.0*a*a - 9.0*b) / 27.0 + c;
+    float d = q*q + 4.0*p3 / 27.0;
+    float offset = -a / 3.0;
+    if(d >= 0.0) {
+        float z = sqrt(d);
+        vec2 x = (vec2(z, -z) - q) / 2.0;
+        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
+        return vec3(offset + uv.x + uv.y);
+    }
+    float v = acos(-sqrt(-27.0 / p3) * q / 2.0) / 3.0;
+    float m = cos(v), n = sin(v)*1.732050808;
+    return vec3(m + m, -n - m, n - m) * sqrt(-p / 3.0) + offset;
 }
 
 
@@ -93,7 +120,27 @@ float angleIntegrate(float a, float b, float c, float d, float e, float f, float
     float theta0 = atan(y0, x0),
     theta1 = atan(y1, x1);
     float diff = theta1-theta0;
-    return diff;
+    diff = mix(mix(diff, diff-2*PI, diff>PI), diff+2*PI, diff<-PI);
+    if(abs(diff)<1){
+        return diff;//removes degenerate cases
+    }
+    float theta2 = theta0+diff/2;
+    float sx = cos(theta2),
+    sy = sin(theta2);
+    vec2 roots = interceptLineBezier(a, b, c, d, e, f, sx, sy);
+    float t12 = mix(t1, t0, 0.5);
+    float t2 = mix(roots.y, roots.x, abs(roots.y-t12)>abs(roots.x-t12));
+
+    vec2 x2 = vec2(a,d)*t2*t2+vec2(b,e)*t2+vec2(c,f);
+    float prod = dot(x2, vec2(sx, sy));
+
+    if(prod>0){
+        return diff;//short way
+    }
+
+    //it took the long way round
+    return mix(mix(diff, diff-2*PI, diff>0), diff+2*PI, diff<0);
+    //if somehow a 0 diff manages to make it through here then there you go
 }
 
 vec2 quadApprox(float a, float b, float c, float d, float e, float t) {
@@ -123,44 +170,12 @@ vec4 solveQuartic(float a, float b, float c, float d, float e){
     if(abs(a)<epsilon){
         return vec4(solveQuadratic(c, d, e), 1, 1);
     }
-    vec3 stationary = sort(solveCubic(3*b/4/a, 2*c/4/a, d/4/a));
+
+    vec3 stationary = sort(solveCubic2(3*b/4/a, 2*c/4/a, d/4/a));
     vec4 roots = vec4(quadApprox(a, b, c, d, e, stationary.x), quadApprox(a, b, c, d, e, stationary.z));
     vec3 v = evalQuartic(a, b, c, d, e, vec4(stationary, 1)).xyz;
     roots = mix(vec4(1), roots, bvec4(v.x<0, v.x<0&&v.y>0, v.z<0&&v.y>0, v.z<0));
     return roots;
-}
-
-int testIntersect(vec2 p, vec2 d, float t){
-    float delta = sign(d.y);
-    bool good = p.x>0 && t>0 && t<1;
-    return int(mix(0., delta, good));
-}
-
-int testIntersect2(vec2 p, vec2 d, float t){
-    float delta = sign(d.y);
-    bool good = p.x>0 && t>0 && t<1;
-    return int(mix(0., 1., good));
-}
-
-int countWinds(vec2 A, vec2 B, vec2 C){
-    vec2 s = vec2(1, 0);
-    float a = A.x;
-    float b = B.x;
-    float c = C.x;
-    float d = A.y;
-    float e = B.y;
-    float f = C.y;
-
-    vec2 hits = intersectLineBezier(a, b, c, d, e, f, s.x, s.y);//min, max
-    float t0 = hits.x, t1 = hits.y;
-    vec2 p0 = A*t0*t0+B*t0+C;
-    vec2 p1 = A*t1*t1+B*t1+C;
-    vec2 d0 = 2*A*t0+B;
-    vec2 d1 = 2*A*t1+B;
-
-    int count = testIntersect2(p0, d0, t0);
-    count += testIntersect2(p1, d1, t1);
-    return count;
 }
 
 
@@ -175,8 +190,6 @@ float calcArea(vec2 pos, float r){
     float R2 = r*r;
 
     vec2 minA = pos-vec2(r), maxA = pos+vec2(r);
-    bool intersects = false;
-    int winds = 0;
 
     for (int i = start; i < end; i++) {
         int j = i*6 + u_FontLen*4+u_FontLen+1;
@@ -185,7 +198,6 @@ float calcArea(vec2 pos, float r){
         vec2 B = (vTransform * vec4(fetch(j + 1), 0, 0)).xy * u_Viewport.zw / 2 / u_EmScale;
         vec2 C = ((vTransform * vec4(fetch(j + 2), 0, 1)).xy + vec2(1, 1)) * u_Viewport.zw / 2 / u_EmScale;
         C -= pos;
-        winds += countWinds(A, B, C);
         float a = A.x;
         float b = B.x;
         float c = C.x;
@@ -196,14 +208,13 @@ float calcArea(vec2 pos, float r){
         float tx = clamp(mix(-b/(2*a), 0, abs(a)<epsilon), 0, 1);
         float ty = clamp(mix(-e/(2*d), 0, abs(d)<epsilon), 0, 1);
         vec2 p0 = C,
-                p1 = A+B+C,
-                px = A*tx*tx+B*tx+C,
-                py = A*ty*ty+B*ty+C;
-
-
+        p1 = A+B+C,
+        px = A*tx*tx+B*tx+C,
+        py = A*ty*ty+B*ty+C;
         vec2 minB = min(min(p0, p1), min(px, py))+pos,
         maxB = max(max(p0, p1), max(px, py))+pos;
         if(!(all(lessThan(minA, maxB))&&all(lessThan(minB, maxA)))){
+            total -= angleIntegrate(a, b, c, d, e, f, 0, 1);
             continue;
         }
 
@@ -213,22 +224,36 @@ float calcArea(vec2 pos, float r){
         k1 = 2*(b*c+e*f),
         k0 = c*c+f*f-R2;
 
-        vec4 roots = clamp(solveQuartic(k4, k3, k2, k1, k0), vec4(0), vec4(1));
-
-        intersects = intersects || (abs(roots.x-roots.y)>epsilon || abs(roots.z-roots.w)>epsilon);
+        vec4 roots = solveQuartic(k4, k3, k2, k1, k0);
 
         float i3 = (d*b-a*e)*.5/3,
         i2 = .5*(c*d-a*f),
         i1 = .5*(e*c-b*f);
 
-        total -= windowIntegrate(i3, i2, i1, roots.x, roots.y, r);
-        total += angleIntegrate(a, b, c, d, e, f, roots.x, roots.y);
+        float ta = 0;
+        float tb = roots.x;
+        float delta = 0;
+        delta -= angleIntegrate(a, b, c, d, e, f, clamp(ta, 0, 1), clamp(tb, 0, 1));
 
-        total -= windowIntegrate(i3, i2, i1, roots.z, roots.w, r);
-        total += angleIntegrate(a, b, c, d, e, f, roots.z, roots.w);
+        ta = tb;
+        tb = roots[1];
+        delta -= windowIntegrate(i3, i2, i1, clamp(ta, 0, 1), clamp(tb, 0, 1), r);
+
+        ta = tb;
+        tb = roots[2];
+        delta -= angleIntegrate(a, b, c, d, e, f, clamp(ta, 0, 1), clamp(tb, 0, 1));
+
+        ta = tb;
+        tb = roots[3];
+        delta -= windowIntegrate(i3, i2, i1, clamp(ta, 0, 1), clamp(tb, 0, 1), r);
+
+        ta = tb;
+        tb = 1;
+        delta -= angleIntegrate(a, b, c, d, e, f, clamp(ta, 0, 1), clamp(tb, 0, 1));
+        total += delta;
     }
 
-    return mix(mix(0.0, 2*PI, mod(winds, 2)==1), mod(total, 2*PI), intersects);
+    return total;
 }
 
 void main () {
@@ -238,6 +263,6 @@ void main () {
 
     float area = calcArea(pixelPos, r)/PI/2;
 
-    color = vec4(vTint.rgb, area*vTint.a);
+    color = vec4(vTint.rgb, area);
     //color = vec4(1, 0, 0, 1);
 }

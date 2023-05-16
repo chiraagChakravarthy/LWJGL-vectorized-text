@@ -8,6 +8,7 @@ import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import test.alg_test.VectorFont2;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -52,9 +53,10 @@ public class TextRendererTest {
     }
 
     private void render() {
-        Vector4f color = new Vector4f(1,0,1,1);
+        Vector4f color = new Vector4f(0, 0, 0, 1);
+        VectorFont font = new VectorFont("/font/PAPYRUS.ttf");
 
-        TextRenderer textRenderer = new TextRenderer();
+        TextRenderer textRenderer = new TextRenderer(font);
 
         Matrix4f mvp = new Matrix4f().ortho(0, WIDTH, 0, HEIGHT, -1000, 1000);
         Matrix4f pose = new Matrix4f().translate(WIDTH/2f, HEIGHT/2f, 0).scale(200);
@@ -62,15 +64,9 @@ public class TextRendererTest {
         do {
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
-            Random random = new Random();
-            for (int i = 0; i < 200; i++) {
-                Matrix4f pose2 = new Matrix4f(pose);
-                pose2.mul(new Matrix4f().translate(random.nextFloat()*10-5, random.nextFloat()*10-5, 0));
-
-                textRenderer.drawText(Math.random() + "", pose2, mvp, new Vector2f(0, 0), TextRenderer.TextBoundType.BOUNDING_BOX, color);
-                textRenderer.drawText2D(Math.random() + "", (float)Math.random()*WIDTH, (float)Math.random()*HEIGHT, 10, new Vector2f(0, 0), TextRenderer.TextBoundType.BASELINE, new Vector4f(0, 0, 0, 1));
+            for (int i = 0; i < 1; i++) {
+                textRenderer.drawText2D("(wtaf)", 500, 500, 300, TextRenderer.ALIGN_MIDDLE, TextRenderer.TextBoundType.BASELINE, color);
             }
-
             textRenderer.render();
 
             glfwSwapBuffers(window); // Update Window

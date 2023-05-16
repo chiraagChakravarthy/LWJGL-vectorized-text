@@ -16,7 +16,13 @@ import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
  *
  */
 public class TextRenderer {
-    public static final int MAX_LEN = 1000;
+
+    public static final Vector2f ALIGN_MIDDLE = new Vector2f(),
+            ALIGN_TOP_MIDDLE = new Vector2f(0, 1),
+            ALIGN_BOTTOM_MIDDLE = new Vector2f(0, -1),
+            ALIGN_BOTTOM_LEFT = new Vector2f(-1, -1),
+            ALIGN_BOTTOM_RIGHT = new Vector2f(1, -1);
+    public static final int MAX_LEN = 10000;
     private static int shader, u_Atlas, u_EmScale, u_Viewport, u_FontLen;
     private static int textVao, instanceVbo;
     private static boolean initialized = false;
