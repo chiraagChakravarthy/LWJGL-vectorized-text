@@ -54,7 +54,7 @@ public class TextRendererTest {
 
     private void render() {
         Vector4f color = new Vector4f(0, 0, 0, 1);
-        VectorFont font = new VectorFont("/font/PAPYRUS.ttf");
+        VectorFont font = new VectorFont("/font/ariblk.ttf");
 
         TextRenderer textRenderer = new TextRenderer(font);
 
@@ -65,7 +65,7 @@ public class TextRendererTest {
             fps();
             glClear(GL_COLOR_BUFFER_BIT);
             for (int i = 0; i < 1; i++) {
-                textRenderer.drawText2D("(wtaf)", 500, 500, 700, TextRenderer.ALIGN_MIDDLE, TextRenderer.TextBoundType.BASELINE, color);
+                textRenderer.drawText2D("a", 500, 500, 7000, TextRenderer.ALIGN_MIDDLE, TextRenderer.TextBoundType.BASELINE, color);
             }
             textRenderer.render();
 

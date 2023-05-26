@@ -17,6 +17,9 @@ import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
  */
 public class TextRenderer {
 
+    /** preset alignments for text
+     *
+     */
     public static final Vector2f ALIGN_MIDDLE = new Vector2f(),
             ALIGN_TOP_MIDDLE = new Vector2f(0, 1),
             ALIGN_BOTTOM_MIDDLE = new Vector2f(0, -1),
@@ -43,7 +46,8 @@ public class TextRenderer {
      * call after creating opengl capabilities
      * loads shaders, initializes buffers and vertex array
      */
-    private static void init(){
+    public static void init(){
+        if(initialized) return;
         initShaders();
         initVao();
         initStringBuffer();
@@ -130,17 +134,24 @@ public class TextRenderer {
         TextRenderer.textVao = vao;
     }
 
-    private static void assertInitialized(){
-        if(!initialized){
-            init();
-        }
-    }
-
+    /**
+     *
+     * @param text string what drawn
+     * @param x x coordinate in pixels
+     * @param y y coordinate in pixels
+     * @param pxScale scale of text in pixels
+     * @param align where within the string is its 'position'
+     *          (-1, -1): bottom left
+     *          (1, 1) top right
+     *          (0, 0) centered
+     * @param alignType align with the geometric string bounds, or with fixed height bounds
+     * @param color rgba color (0,1)
+     */
     public void drawText2D(String text, float x, float y, float pxScale, Vector2f align, TextBoundType alignType, Vector4f color){
         if(text.isEmpty()){
             return;
         }
-        assertInitialized();
+        init();
         int[] viewport = new int[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
         int vx = viewport[0],
@@ -155,10 +166,11 @@ public class TextRenderer {
 
 
 
-    /** Draw text with different alignment
+    /** Draw text in 3d space
      *
      * @param text string what drawn
      * @param pose position, scale, rotation
+     * @param mvp model, view, projection
      * @param align where within the string is its 'position'
      *              (-1, -1): bottom left
      *              (1, 1) top right
@@ -170,7 +182,7 @@ public class TextRenderer {
         if(text.isEmpty()){
             return;
         }
-        assertInitialized();
+        init();
         int len = Math.min(MAX_LEN-this.len, text.length());
         int[] bounds = new int[4];
         int[] advance = new int[len];
@@ -210,6 +222,9 @@ public class TextRenderer {
         }
     }
 
+    /**
+     * renders all the text to the currently bound framebuffer (screen by default) and clears text buffer
+     */
     public void render(){
         glUseProgram(shader);
 
@@ -236,8 +251,43 @@ public class TextRenderer {
         len = 0;
     }
 
-    //returns bounds and advance at 1px scale, in pixels
-    public void getBoundAndAdvance(String text, int len, VectorFont font, int[] bounds, int[] advance){
+    /** Computes the geometric bounding box of a string drawn using the given font at the pixel scale specified
+     *
+     * @param text string to evaluate
+     * @param font font used to render string
+     * @param bounds array to output bounds to
+     * @param pxScale scale of the string in pixels
+     */
+    public void getStringBounds(String text, VectorFont font, float[] bounds, float pxScale){
+        char[] codepoints = text.toCharArray();
+
+        int y0 = font.bound(codepoints[0], 1);
+        int y1 = font.bound(codepoints[0], 3);
+
+        char prevCodepoint = codepoints[0];
+
+        int currAdvance = 0;
+
+        for (int i = 1; i < codepoints.length; i++) {
+            char codepoint = codepoints[i];
+            currAdvance += font.advance(prevCodepoint);
+            currAdvance += font.kern(prevCodepoint, codepoint);
+
+            prevCodepoint = codepoint;
+
+            y0 = Math.min(font.bound(codepoint, 1), y0);
+            y1 = Math.max(font.bound(codepoint, 3), y1);
+        }
+
+        int x0 = font.bound(codepoints[0], 0);
+        int x1 = currAdvance + font.bound(codepoints[codepoints.length-1], 2);
+        bounds[0] = x0*font.emScale*pxScale;
+        bounds[1] = y0*font.emScale*pxScale;
+        bounds[2] = x1*font.emScale*pxScale;
+        bounds[3] = y1*font.emScale*pxScale;
+    }
+
+    private void getBoundAndAdvance(String text, int len, VectorFont font, int[] bounds, int[] advance){
         char[] codepoints = text.toCharArray();
 
         int y0 = font.bound(codepoints[0], 1);
@@ -315,6 +365,9 @@ public class TextRenderer {
         return id;
     }
 
+    /**
+     * used to specify which vertical bounds to align with
+     */
     public enum TextBoundType {
         BASELINE,
         BOUNDING_BOX

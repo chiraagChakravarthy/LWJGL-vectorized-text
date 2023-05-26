@@ -8,7 +8,6 @@ layout (location=0) out vec4 color;
 
 uniform isamplerBuffer u_Atlas;
 uniform float u_EmScale;
-uniform mat4 u_Mvp;
 uniform vec4 u_Viewport;
 uniform int u_FontLen;
 
@@ -133,12 +132,6 @@ vec4 solveQuartic(float a, float b, float c, float d, float e){
 int testIntersect(vec2 p, vec2 d, float t){
     float delta = sign(d.y);
     bool good = p.x>0 && t>0 && t<1;
-    return int(mix(0., delta, good));
-}
-
-int testIntersect2(vec2 p, vec2 d, float t){
-    float delta = sign(d.y);
-    bool good = p.x>0 && t>0 && t<1;
     return int(mix(0., 1., good));
 }
 
@@ -158,8 +151,8 @@ int countWinds(vec2 A, vec2 B, vec2 C){
     vec2 d0 = 2*A*t0+B;
     vec2 d1 = 2*A*t1+B;
 
-    int count = testIntersect2(p0, d0, t0);
-    count += testIntersect2(p1, d1, t1);
+    int count = testIntersect(p0, d0, t0);
+    count += testIntersect(p1, d1, t1);
     return count;
 }
 
